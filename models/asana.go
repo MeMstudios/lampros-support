@@ -1,0 +1,30 @@
+package models
+
+type Resource struct {
+	Id           int    `json:"id"`
+	Gid          string `json:"gid"`
+	ResourceType string `json:"resource_type"`
+	Name         string `json:"name"`
+	Error        string `json:"error"`
+}
+
+type Task struct {
+	Id             int        `json:"id"`
+	Gid            string     `json:"gid"`
+	Assignee       string     `json:"assignee"`
+	AssigneeStatus string     `json:"assignee_status"`
+	Completed      bool       `json:"completed"`
+	CompletedAt    string     `json:"completed_at"`
+	Created        string     `json:"created_at"` //2019-01-31T16:22:27.471
+	DueTime        string     `json:"due_at"`     //2019-01-31T16:22:27.471Z
+	DueDate        string     `json:"due_on"`     //2019-02-01
+	Followers      []Resource `json:"followers"`
+	Modified       string     `json:"modified_at"`
+	Name           string     `json:"name"`
+	Notes          string     `json:"notes"`
+	Projects       []Resource `json:"projects"`
+	ResourceType   string     `json:"resource_type"`
+	StartDate      string     `json:"start_on"`
+	Tags           []Resource `json:"tags"`
+	Workspace      Resource   `json:"workspace"`
+}
