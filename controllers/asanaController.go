@@ -12,19 +12,24 @@ import (
 
 //Get task details from an asana project
 func GetTasks() []Task {
-	projectResponseData := getResponse(parseUrl(AsanaBase + "/projects/" + SupportProjectID + "/tasks"))
+	projectRespData := getResponse(parseUrl(AsanaBase + "/projects/" + SupportProjectID + "/tasks"))
 
-	var projectResponseObject Response
+	var projectResp Response
 	//unmarshal the data to the response object
-	json.Unmarshal(projectResponseData, &projectResponseObject)
-
+	json.Unmarshal(projectRespData, &projectResp)
+	if len(projectResp.Errors) > 0 {
+		logApiErrors(projectResp.Errors)
+	}
 	var tasks []Task
-	for i := 0; i < len(projectResponseObject.Resources); i++ {
+	for i := 0; i < len(projectResp.Resources); i++ {
 		var resp TaskResponse
 		//Get the task response data
-		taskResponseData := getResponse(parseUrl(AsanaBase + "/tasks/" + projectResponseObject.Resources[i].Gid))
+		taskResponseData := getResponse(parseUrl(AsanaBase + "/tasks/" + projectResp.Resources[i].Gid))
 		//Make it an object
 		json.Unmarshal(taskResponseData, &resp)
+		if len(resp.Errors) > 0 {
+			logApiErrors(resp.Errors)
+		}
 		//append the task responses into the array
 		tasks = append(tasks, resp.Task)
 		fmt.Println("task: " + tasks[i].Gid)
@@ -41,14 +46,12 @@ func UpdateTasks(tasks []Task) {
 	for i < len(tasks) {
 		//Check if the task description(email body) or name(email subject) contains urgent (case-insensitive )
 		if CaseInsensitiveContains(tasks[i].Notes, "urgent") || CaseInsensitiveContains(tasks[i].Name, "urgent") {
-			fmt.Println(tasks[i].Gid + " Contains Urgent")
-
+			//Add the urgent tag
 			respData := postRequest(params, parseUrl(AsanaBase+"/tasks/"+tasks[i].Gid+"/addTag"))
 			var resp Response
 			json.Unmarshal(respData, &resp)
-
-			if len(resp.Resources) > 0 {
-				log.Fatal(resp.Resources[0].Name)
+			if len(resp.Errors) > 0 {
+				logApiErrors(resp.Errors)
 			}
 		}
 		i++
@@ -77,7 +80,7 @@ func CheckProjectEmail(userEmail string) bool {
 	projectResponseData := getResponse(parseUrl(AsanaBase + "/projects/" + SupportProjectID + "?opt_fields=followers"))
 	var resp ProjectFollowersResponse
 	json.Unmarshal(projectResponseData, &resp)
-	if resp.Errors != nil {
+	if len(resp.Errors) > 0 {
 		logApiErrors(resp.Errors)
 	}
 	for _, f := range resp.ProjectFollowers.Followers {
