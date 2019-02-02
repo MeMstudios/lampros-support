@@ -28,3 +28,18 @@ type Task struct {
 	Tags           []Resource `json:"tags"`
 	Workspace      Resource   `json:"workspace"`
 }
+
+type User struct {
+	Id           int        `json:"id"`
+	Gid          string     `json:"gid"`
+	ResourceType string     `json:"resource_type"`
+	Name         string     `json:"name"`
+	Email        string     `json:"email"`
+	Workspaces   []Resource `json:"workspaces"`
+}
+
+type ProjectFollowers struct {
+	Id        int        `json:"id"`
+	Gid       string     `json:"gid"`
+	Followers []Resource `json:"followers"`
+}

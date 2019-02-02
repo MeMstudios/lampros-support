@@ -67,6 +67,10 @@ func UpdateTasks(tasks []Task) {
 	}
 }
 
+func GetUsersByEmail(userEmails []string) User {
+
+}
+
 func CaseInsensitiveContains(s, substr string) bool {
 	s, substr = strings.ToUpper(s), strings.ToUpper(substr)
 	return strings.Contains(s, substr)
