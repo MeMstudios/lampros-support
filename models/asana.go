@@ -8,6 +8,11 @@ type Resource struct {
 	Error        string `json:"error"`
 }
 
+type Error struct {
+	Message string `json:"message"`
+	Help    string `json:"help"`
+}
+
 type Task struct {
 	Id             int        `json:"id"`
 	Gid            string     `json:"gid"`
