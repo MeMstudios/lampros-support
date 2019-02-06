@@ -22,23 +22,29 @@ func GetTasks() []Task {
 	}
 	var tasks []Task
 	for i := 0; i < len(projectResp.Resources); i++ {
-		var resp TaskResponse
 		//Get the task response data
-		taskResponseData := getResponse(parseUrl(AsanaBase + "/tasks/" + projectResp.Resources[i].Gid))
-		//Make it an object
-		json.Unmarshal(taskResponseData, &resp)
-		if len(resp.Errors) > 0 {
-			logApiErrors(resp.Errors)
-		}
+		task := GetTask(projectResp.Resources[i].Gid)
 		//append the task responses into the array
-		tasks = append(tasks, resp.Task)
-		fmt.Println("task: " + tasks[i].Gid)
+		tasks = append(tasks, task)
+		fmt.Println("task: " + task.Gid)
 	}
 
 	return tasks
 }
 
-func UpdateTasks(tasks []Task) {
+func GetTask(taskId string) Task {
+	var resp TaskResponse
+	//Get the task response data
+	taskResponseData := getResponse(parseUrl(AsanaBase + "/tasks/" + taskId))
+	//Make it an object
+	json.Unmarshal(taskResponseData, &resp)
+	if len(resp.Errors) > 0 {
+		logApiErrors(resp.Errors)
+	}
+	return resp.Task
+}
+
+func UpdateTaskTags(tasks []Task) {
 	i := 0
 	var params map[string]string
 	params = make(map[string]string)
@@ -67,6 +73,18 @@ func GetUserByEmail(userEmail string) (User, error) {
 		return userResp.User, errors.New("can't find user!")
 	}
 	return userResp.User, nil
+}
+
+func UpdateTaskFollowers(follower, taskId string) Response {
+	params := make(map[string]string)
+	params["followers[0]"] = follower
+	respData := postRequest(params, parseUrl(AsanaBase+"/tasks/"+taskId+"/addFollowers"))
+	var resp Response
+	json.Unmarshal(respData, &resp)
+	if len(resp.Errors) > 0 {
+		logApiErrors(resp.Errors)
+	}
+	return resp
 }
 
 func CheckProjectEmail(userEmail string) bool {

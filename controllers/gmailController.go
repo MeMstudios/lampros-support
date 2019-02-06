@@ -94,20 +94,12 @@ func startGmailClient() *gmail.Service {
 }
 
 func GetSenders() []string {
-	user := "me"
 	api := startGmailClient()
-	mesList, err := api.Users.Messages.List(user).Q("to:testsoftwaresupport@lamproslabs.com is:unread").Do()
-	if err != nil {
-		log.Fatalf("Failed to get messages: %v", err)
-	}
-	if len(mesList.Messages) == 0 {
-		log.Fatalf("No messages to testsoftwaresupport@lamproslabs.com")
-	}
-
-	fmt.Println("Messages:")
+	user := "me"
+	messages := GetMessages(user)
 	var froms []string
 	//var headerRef gmail.MessagePartHeader
-	for _, m := range mesList.Messages {
+	for _, m := range messages {
 		mesDeets, err := api.Users.Messages.Get(user, m.Id).Format("metadata").Do()
 		if err != nil {
 			log.Fatalf("Failed to get metadata")
@@ -123,6 +115,54 @@ func GetSenders() []string {
 		}
 	}
 	return froms
+}
+
+func GetSender(id string) string {
+	api := startGmailClient()
+	user := "me"
+	meta, err := api.Users.Messages.Get(user, id).Format("metadata").Do()
+	if err != nil {
+		log.Fatalf("Failed to get metadata")
+	}
+	var from string
+	for _, h := range meta.Payload.Headers {
+		if h.Name == "From" {
+			fromSplit := strings.Split(h.Value, "<")
+			email := strings.Split(fromSplit[1], ">")
+			from = email[0]
+			fmt.Println("From: " + from)
+		}
+	}
+	return from
+}
+
+func GetMessages(user string) []*gmail.Message {
+	api := startGmailClient()
+	mesList, err := api.Users.Messages.List(user).Q("to:testsoftwaresupport@lamproslabs.com is:unread").Do()
+	if err != nil {
+		log.Fatalf("Failed to get messages: %v", err)
+	}
+	if len(mesList.Messages) == 0 {
+		fmt.Println("No messages to testsoftwaresupport@lamproslabs.com")
+	}
+	return mesList.Messages
+}
+
+func GetSubject(id string) string {
+	api := startGmailClient()
+	user := "me"
+	meta, err := api.Users.Messages.Get(user, id).Format("metadata").Do()
+	if err != nil {
+		log.Fatalf("Failed to get metadata")
+	}
+	subj := ""
+	for _, h := range meta.Payload.Headers {
+		fmt.Println("Header Name: " + h.Name + ", Header Value: " + h.Value)
+		if h.Name == "Subject" {
+			subj = h.Value
+		}
+	}
+	return subj
 }
 
 func SendEmail(body, subj string, recip []string) bool {
