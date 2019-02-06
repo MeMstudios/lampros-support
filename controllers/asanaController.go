@@ -85,21 +85,15 @@ func UpdateTaskFollowers(follower, taskId string) Response {
 }
 
 func CheckProjectEmail(userEmail string) bool {
-	//get the user by email
-	u, err := GetUserByEmail(userEmail)
-	if err != nil {
-		log.Println(err)
-		return false
-	}
 	//get all the followers on a project
-	projectResponseData := getResponse(parseUrl(AsanaBase + "/projects/" + SupportProjectID + "?opt_fields=followers"))
+	projectResponseData := getResponse(parseUrl(AsanaBase + "/projects/" + SupportProjectID))
 	var resp ProjectFollowersResponse
 	json.Unmarshal(projectResponseData, &resp)
 	if len(resp.Errors) > 0 {
 		logApiErrors(resp.Errors)
 	}
 	for _, f := range resp.ProjectFollowers.Followers {
-		if u.Gid == f.Gid {
+		if userEmail == f.Name {
 			return true
 		}
 	}

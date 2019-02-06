@@ -1,6 +1,8 @@
 package controllers
 
 import (
+	"crypto/hmac"
+	"crypto/sha256"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -81,62 +83,79 @@ func TestEndpoint(w http.ResponseWriter, r *http.Request) {
 //POST endpoint for Asana to send events in webhooks
 func WebhookEndpoint(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
-	var emptyResponse []byte
+	fmt.Println("///////////////////////Recieved Webhook//////////////////")
 	var event WebhookEvent
-	hookSecret := r.Header.Get("X-Hook-Secret")
-	if hookSecret != SavedHookSecret {
-		fmt.Println("Sent secret doesn't match the saved one.  GTFO! " + hookSecret)
-		w.Header().Set("X-Hook-Secret", "FUCKYOU")
-		w.WriteHeader(http.StatusForbidden)
-		w.Write(emptyResponse)
-		return
-	}
+	//TODO: figure out HMAC decode
+	// hookSecret := r.Header.Get("X-Hook-Signature")
+	// if !checkMAC("message", hookSecret) {
+	// 	fmt.Println("Hoook secret: " + hookSecret)
+	// 	fmt.Println("Sent secret doesn't match the saved one.  GTFO! " + hookSecret)
+	// 	w.Header().Set("X-Hook-Secret", "FUCKYOU")
+	// 	w.WriteHeader(http.StatusForbidden)
+	// 	w.Write(emptyResponse)
+	// 	return
+	// }
 	if err := json.NewDecoder(r.Body).Decode(&event); err != nil {
 		respondWithError(w, http.StatusBadRequest, "Invalid request payload")
+		fmt.Printf("invalid request payload: %v\n", err)
 		return
 	}
 	events := event.Events
-
+	fmt.Println("Got events.")
 	//EMAIL RECIPIENTS
 	recips := []string{"michael@lamproslabs.com"}
 	for _, e := range events {
+		fmt.Println("Type: " + e.Type)
+		fmt.Println("Action: " + e.Action)
+		fmt.Println("Created at: " + e.Created)
+		fmt.Printf("Parent: %d\n", e.Parent)
+		fmt.Printf("ID: %d\n", e.Resource)
 		switch e.Type {
 		case "task":
-			{
-				task := GetTask(string(e.Resource))
+			if e.Action == "added" {
+				taskId := strconv.Itoa(e.Resource)
+				fmt.Println(taskId)
+				task := GetTask(string(taskId))
 				emails := GetMessages("me")
 				for _, e := range emails {
 					subject := GetSubject(e.Id)
 					sender := GetSender(e.Id)
 					senderArr := []string{sender} //Needed for SendEmail
-					user, err := GetUserByEmail(sender)
-					if err != nil {
-						SendEmail("Please add the new user email: "+sender+" to the support project: https://app.asana.com/0/"+SupportProjectID, "New User Detected for Support.", recips)
+					if !CheckProjectEmail(sender) {
+						SendEmail("Please add the new user email: "+sender+" to the support project: https://app.asana.com/0/"+SupportProjectID+"\nThen add them to the request: https://app.asana.com/0/"+SupportProjectID+"/"+taskId, "New User Detected for Support.", recips)
 						SendEmail("Thank you for your for your request to Lampros Support. \nWe do not recognize your email.  You will need to be added to Asana to recieve support notifications. \nWe will confirm your email and add you to your support project. \nWe will contact you directly if we need more information. \n\n Thank you, \n\n -Lampros Labs Team \n", "New Software Support Request", senderArr)
 					} else {
-						fmt.Println("User found: " + user.Gid)
+						fmt.Println("Follower found: " + sender)
 						if subject == task.Name {
-							UpdateTaskFollowers(user.Email, task.Gid)
+							fmt.Println("Trying to add to project")
+							UpdateTaskFollowers(sender, task.Gid)
 						}
 					}
 				}
 				UpdateTaskTags(task)
 			}
-		case "project":
-			{
-
-			}
 		case "webhook":
-			{
-				fmt.Println("Hoook secret: " + hookSecret)
-				//fmt.Println(ioutil.ReadAll(r.Body))
-				w.Header().Set("X-Hook-Secret", hookSecret)
-				w.WriteHeader(http.StatusOK)
-				w.Write(emptyResponse)
-			}
+			hookSecret := r.Header.Get("X-Hook-Signature")
+			fmt.Println("Hoook secret: " + hookSecret)
+			w.Header().Set("X-Hook-Secret", hookSecret)
+			w.WriteHeader(http.StatusOK)
+			w.Write([]byte(""))
+			return
 		}
 	}
+	fmt.Println("///////////////////////Completed Webhook//////////////////")
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte("thanks"))
+	return
+}
 
+func checkMAC(message, sentMAC string) bool {
+	mac := hmac.New(sha256.New, []byte(SavedHookSecret))
+	mac.Write([]byte(message))
+	expectedMAC := mac.Sum(nil)
+	fmt.Printf("%x\n", expectedMAC)
+	fmt.Printf("%x\n", []byte(sentMAC))
+	return hmac.Equal([]byte(sentMAC), expectedMAC)
 }
 
 func respondWithError(w http.ResponseWriter, code int, msg string) {

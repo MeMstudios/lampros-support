@@ -7,4 +7,4 @@ const NewTagGid = "1107602815071860"
 const PendingTagGid = "1107602815071861"
 const ResolvedTagGid = "1107602815071862"
 
-const Environment = "dev" //checks for prod, anything else starts a normal server
+const Environment = "prod" //checks for prod, anything else starts a normal server

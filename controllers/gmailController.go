@@ -157,7 +157,6 @@ func GetSubject(id string) string {
 	}
 	subj := ""
 	for _, h := range meta.Payload.Headers {
-		fmt.Println("Header Name: " + h.Name + ", Header Value: " + h.Value)
 		if h.Name == "Subject" {
 			subj = h.Value
 		}
