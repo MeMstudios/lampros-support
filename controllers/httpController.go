@@ -108,9 +108,11 @@ func WebhookEndpoint(w http.ResponseWriter, r *http.Request) {
 				for _, e := range emails {
 					subject := GetSubject(e.Id)
 					sender := GetSender(e.Id)
+					senderArr := []string{sender} //Needed for SendEmail
 					user, err := GetUserByEmail(sender)
 					if err != nil {
 						SendEmail("Please add the new user email: "+sender+" to the support project: https://app.asana.com/0/"+SupportProjectID, "New User Detected for Support.", recips)
+						SendEmail("Thank you for your for your request to Lampros Support. \nWe do not recognize your email.  You will need to be added to Asana to recieve support notifications. \nWe will confirm your email and add you to your support project. \nWe will contact you directly if we need more information. \n\n Thank you, \n\n -Lampros Labs Team \n", "New Software Support Request", senderArr)
 					} else {
 						fmt.Println("User found: " + user.Gid)
 						if subject == task.Name {
@@ -118,6 +120,7 @@ func WebhookEndpoint(w http.ResponseWriter, r *http.Request) {
 						}
 					}
 				}
+				UpdateTaskTags(task)
 			}
 		case "project":
 			{

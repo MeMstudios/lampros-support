@@ -44,23 +44,20 @@ func GetTask(taskId string) Task {
 	return resp.Task
 }
 
-func UpdateTaskTags(tasks []Task) {
-	i := 0
+func UpdateTaskTags(task Task) {
 	var params map[string]string
 	params = make(map[string]string)
 	params["tag"] = UrgentTagGid
-	for i < len(tasks) {
-		//Check if the task description(email body) or name(email subject) contains urgent (case-insensitive )
-		if CaseInsensitiveContains(tasks[i].Notes, "urgent") || CaseInsensitiveContains(tasks[i].Name, "urgent") {
-			//Add the urgent tag
-			respData := postRequest(params, parseUrl(AsanaBase+"/tasks/"+tasks[i].Gid+"/addTag"))
-			var resp Response
-			json.Unmarshal(respData, &resp)
-			if len(resp.Errors) > 0 {
-				logApiErrors(resp.Errors)
-			}
+
+	//Check if the task description(email body) or name(email subject) contains urgent (case-insensitive )
+	if CaseInsensitiveContains(task.Notes, "urgent") || CaseInsensitiveContains(task.Name, "urgent") {
+		//Add the urgent tag
+		respData := postRequest(params, parseUrl(AsanaBase+"/tasks/"+task.Gid+"/addTag"))
+		var resp Response
+		json.Unmarshal(respData, &resp)
+		if len(resp.Errors) > 0 {
+			logApiErrors(resp.Errors)
 		}
-		i++
 	}
 }
 
