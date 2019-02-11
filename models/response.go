@@ -20,6 +20,11 @@ type ProjectFollowersResponse struct {
 	Errors           []Error          `json:"errors"`
 }
 
+type StoryResponse struct {
+	Story  Story   `json:"data"`
+	Errors []Error `json:"errors"`
+}
+
 type WebhookResponse struct {
 	Webhook Webhook `json:"data"`
 	Errors  []Error `json:"errors"`

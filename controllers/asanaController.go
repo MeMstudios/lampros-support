@@ -35,13 +35,34 @@ func GetTasks() []Task {
 func GetTask(taskId string) Task {
 	var resp TaskResponse
 	//Get the task response data
-	taskResponseData := getResponse(parseUrl(AsanaBase + "/tasks/" + taskId))
+	responseData := getResponse(parseUrl(AsanaBase + "/tasks/" + taskId))
 	//Make it an object
-	json.Unmarshal(taskResponseData, &resp)
+	json.Unmarshal(responseData, &resp)
 	if len(resp.Errors) > 0 {
 		logApiErrors(resp.Errors)
 	}
 	return resp.Task
+}
+
+func GetStory(storyId string) Story {
+	var resp StoryResponse
+	responseData := getResponse(parseUrl(AsanaBase + "/stories/" + storyId))
+	json.Unmarshal(responseData, &resp)
+	if len(resp.Errors) > 0 {
+		logApiErrors(resp.Errors)
+	}
+	return resp.Story
+
+}
+
+func GetUser(userId string) User {
+	var resp UserResponse
+	responseData := getResponse(parseUrl(AsanaBase + "/users/" + userId))
+	json.Unmarshal(responseData, &resp)
+	if len(resp.Errors) > 0 {
+		logApiErrors(resp.Errors)
+	}
+	return resp.User
 }
 
 func UpdateTaskTags(task Task) {

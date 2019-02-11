@@ -69,3 +69,16 @@ type Event struct {
 	Type     string `json:"type"`
 	UserId   int    `json:"user"`
 }
+
+type Story struct {
+	Id           int      `json:"id"`
+	Gid          string   `json:"gid"`
+	Created      string   `json:"created_at"`
+	CreatedBy    Resource `json:"created_by"`
+	StoryType    string   `json:"resource_subtype"`
+	ResourceType string   `json:"resource_type"`
+	Source       string   `json:"source"`
+	Target       Resource `json:"target"`
+	Text         string   `json:"text"`
+	Type         string   `json:"type"`
+}
