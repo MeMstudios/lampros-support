@@ -12,7 +12,7 @@ import (
 
 //Get task details from an asana project
 func GetTasks() []Task {
-	projectRespData := getResponse(parseUrl(AsanaBase + "/projects/" + SupportProjectID + "/tasks"))
+	projectRespData := getAsanaResponse(parseUrl(AsanaBase + "/projects/" + SupportProjectID + "/tasks"))
 
 	var projectResp Response
 	//unmarshal the data to the response object
@@ -35,7 +35,7 @@ func GetTasks() []Task {
 func GetTask(taskId string) Task {
 	var resp TaskResponse
 	//Get the task response data
-	taskResponseData := getResponse(parseUrl(AsanaBase + "/tasks/" + taskId))
+	taskResponseData := getAsanaResponse(parseUrl(AsanaBase + "/tasks/" + taskId))
 	//Make it an object
 	json.Unmarshal(taskResponseData, &resp)
 	if len(resp.Errors) > 0 {
@@ -52,7 +52,7 @@ func UpdateTaskTags(task Task) {
 	//Check if the task description(email body) or name(email subject) contains urgent (case-insensitive )
 	if CaseInsensitiveContains(task.Notes, "urgent") || CaseInsensitiveContains(task.Name, "urgent") {
 		//Add the urgent tag
-		respData := postRequest(params, parseUrl(AsanaBase+"/tasks/"+task.Gid+"/addTag"))
+		respData := postAsanaRequest(params, parseUrl(AsanaBase+"/tasks/"+task.Gid+"/addTag"))
 		var resp Response
 		json.Unmarshal(respData, &resp)
 		if len(resp.Errors) > 0 {
@@ -61,9 +61,19 @@ func UpdateTaskTags(task Task) {
 	}
 }
 
+func TaskIsUrgent(taskGid string) bool {
+	task := GetTask(taskGid)
+	for _, t := range task.Tags {
+		if t.Gid == UrgentTagGid {
+			return true
+		}
+	}
+	return false
+}
+
 func GetUserByEmail(userEmail string) (User, error) {
 	var userResp UserResponse
-	userRespData := getResponse(parseUrl(AsanaBase + "/users/" + userEmail))
+	userRespData := getAsanaResponse(parseUrl(AsanaBase + "/users/" + userEmail))
 	json.Unmarshal(userRespData, &userResp)
 	if len(userResp.Errors) > 0 {
 		logApiErrors(userResp.Errors)
@@ -75,7 +85,7 @@ func GetUserByEmail(userEmail string) (User, error) {
 func UpdateTaskFollowers(follower, taskId string) Response {
 	params := make(map[string]string)
 	params["followers[0]"] = follower
-	respData := postRequest(params, parseUrl(AsanaBase+"/tasks/"+taskId+"/addFollowers"))
+	respData := postAsanaRequest(params, parseUrl(AsanaBase+"/tasks/"+taskId+"/addFollowers"))
 	var resp Response
 	json.Unmarshal(respData, &resp)
 	if len(resp.Errors) > 0 {
@@ -86,7 +96,7 @@ func UpdateTaskFollowers(follower, taskId string) Response {
 
 func CheckProjectEmail(userEmail string) bool {
 	//get all the followers on a project
-	projectResponseData := getResponse(parseUrl(AsanaBase + "/projects/" + SupportProjectID))
+	projectResponseData := getAsanaResponse(parseUrl(AsanaBase + "/projects/" + SupportProjectID))
 	var resp ProjectFollowersResponse
 	json.Unmarshal(projectResponseData, &resp)
 	if len(resp.Errors) > 0 {

@@ -18,7 +18,7 @@ import (
 )
 
 //GET a JSON response from an API
-func getResponse(request string) []byte {
+func getAsanaResponse(request string) []byte {
 	bearer := "Bearer " + AsanaAccessToken
 
 	req, err := http.NewRequest("GET", request, nil)
@@ -42,7 +42,7 @@ func getResponse(request string) []byte {
 
 //POST Request with a map of parameters.
 //returns the response as byte array
-func postRequest(params map[string]string, request string) []byte {
+func postAsanaRequest(params map[string]string, request string) []byte {
 	data := url.Values{}
 
 	for key, value := range params {
@@ -54,6 +54,35 @@ func postRequest(params map[string]string, request string) []byte {
 	req, err := http.NewRequest("POST", request, strings.NewReader(data.Encode()))
 
 	req.Header.Add("Authorization", bearer)
+	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
+	req.Header.Add("Content-Length", strconv.Itoa(len(data.Encode())))
+
+	//send request using http client
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		log.Println("Error on response.\n[ERRO] -", err)
+	}
+
+	responseData, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		log.Fatal(err)
+	}
+	return responseData
+}
+
+//POST Request for twilio.
+//returns the response as byte array
+func postTwilioRequest(params map[string]string, request string) []byte {
+	data := url.Values{}
+
+	for key, value := range params {
+		data.Set(key, value)
+	}
+
+	req, err := http.NewRequest("POST", request, strings.NewReader(data.Encode()))
+
+	req.SetBasicAuth(TwilioSID, TwilioAUTH)
 	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
 	req.Header.Add("Content-Length", strconv.Itoa(len(data.Encode())))
 
@@ -114,7 +143,6 @@ func WebhookEndpoint(w http.ResponseWriter, r *http.Request) {
 		case "task":
 			if e.Action == "added" {
 				taskId := strconv.Itoa(e.Resource)
-				fmt.Println(taskId)
 				task := GetTask(string(taskId))
 				emails := GetMessages("me")
 				for _, e := range emails {
@@ -127,12 +155,19 @@ func WebhookEndpoint(w http.ResponseWriter, r *http.Request) {
 					} else {
 						fmt.Println("Follower found: " + sender)
 						if subject == task.Name {
-							fmt.Println("Trying to add to project")
+							fmt.Println("Trying to add to task")
 							UpdateTaskFollowers(sender, task.Gid)
 						}
 					}
 				}
 				UpdateTaskTags(task)
+			}
+		case "story":
+			if e.Action == "added" && e.Parent != 0 {
+				taskId := strconv.Itoa(e.Parent)
+				if TaskIsUrgent(taskId) {
+					fmt.Println("URGENT TASK DETECTED")
+				}
 			}
 		case "webhook":
 			hookSecret := r.Header.Get("X-Hook-Signature")
