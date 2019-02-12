@@ -6,7 +6,7 @@
 *.dylib
 
 # Main binary
-lampros-support
+./lampros-support
 
 # Test binary, build with `go test -c`
 *.test
