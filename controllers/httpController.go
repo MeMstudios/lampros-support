@@ -1,8 +1,6 @@
 package controllers
 
 import (
-	"crypto/hmac"
-	"crypto/sha256"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -11,14 +9,14 @@ import (
 	"net/url"
 	"strconv"
 	"strings"
-	"time"
 
 	. "lampros-support/models"
 
 	"github.com/gorilla/mux"
 )
 
-var timers map[int]*time.Timer
+//Make my timers array which should be accessible by this file
+var timers []ChanTimer
 
 //GET a JSON response from an API
 func getAsanaResponse(request string) []byte {
@@ -194,9 +192,38 @@ func handleEvent(e Event) {
 				fmt.Println("URGENT TASK DETECTED")
 				story := GetStory(storyId)
 				if story.StoryType == "added_to_tag" {
-					timer := StartUrgentTimer()
-					//Add the timer to the timer map using the task id as key.
-					timers[e.Resource] = timer
+					bigTimer := StartUrgentTimer(e.Resource, e.Parent, 1)
+					//Add the timer to the timer array using the task id as key.
+					timers = append(timers, bigTimer)
+					go func() {
+						for t := range bigTimer.Ticker.C {
+							SendTwilioMessage("+18592402898", "You have an urgent support ticket that hasn't been responded to.  Please check your email and respond!")
+							fmt.Println("Sent semi-urgent text at:", t)
+						}
+					}()
+					go func() {
+						<-bigTimer.Timer.C
+						bigTimer.Ticker.Stop()
+						fmt.Println("big ticker stopped.")
+						timers = DeleteFromTimers(timers, bigTimer)
+						fmt.Println("big timer deleted.")
+						timer := StartUrgentTimer(e.Resource, e.Parent, 2)
+						timers = append(timers, timer)
+						fmt.Println("Started short timer.")
+						go func() {
+							for t := range timer.Ticker.C {
+								SendTwilioMessage("+18592402898", "You have an urgent support ticket that hasn't been responded to.  PLEASE RESPOND OR YOU WILL BE FINED!")
+								fmt.Println("Sent urgent text at:", t)
+							}
+						}()
+						go func() {
+							<-timer.Timer.C
+							timer.Ticker.Stop()
+							fmt.Println("Short ticker stopped")
+							timers = DeleteFromTimers(timers, timer)
+							fmt.Println("Short timer deleted")
+						}()
+					}()
 					fmt.Println("Urgent Tag Added.")
 					SendEmail("You have a new urgent ticket please respond immediately: https://app.asana.com/0/"+SupportProjectID+"/"+taskId, "URGENT REQUEST PLEASE RESPOND", recips)
 				}
@@ -206,9 +233,14 @@ func handleEvent(e Event) {
 					commenterEmailParts := strings.Split(commenter.Email, "@")
 					commenterEmailDomain := commenterEmailParts[1]
 					if commenterEmailDomain == "lamproslabs.com" {
-						//STOP THE TIMERS by finding them in the map with the task id key.
-						if timers[e.Resource] != nil {
-							StopTimer(timers[e.Resource])
+						//STOP THE TIMERS by finding them in the array with the task id key.
+						for i, t := range timers {
+							fmt.Println("Timer ", i)
+							if t.TaskId == e.Parent {
+								fmt.Println("Stopping timers")
+								StopTimer(t)
+								timers = DeleteFromTimers(timers, t)
+							}
 						}
 						fmt.Println("Comment made by support team.")
 					}
@@ -218,14 +250,14 @@ func handleEvent(e Event) {
 	}
 }
 
-func checkMAC(message, sentMAC string) bool {
-	mac := hmac.New(sha256.New, []byte(SavedHookSecret))
-	mac.Write([]byte(message))
-	expectedMAC := mac.Sum(nil)
-	fmt.Printf("%x\n", expectedMAC)
-	fmt.Printf("%x\n", []byte(sentMAC))
-	return hmac.Equal([]byte(sentMAC), expectedMAC)
-}
+// func checkMAC(message, sentMAC string) bool {
+// 	mac := hmac.New(sha256.New, []byte(SavedHookSecret))
+// 	mac.Write([]byte(message))
+// 	expectedMAC := mac.Sum(nil)
+// 	fmt.Printf("%x\n", expectedMAC)
+// 	fmt.Printf("%x\n", []byte(sentMAC))
+// 	return hmac.Equal([]byte(sentMAC), expectedMAC)
+// }
 
 func respondWithError(w http.ResponseWriter, code int, msg string) {
 	respondWithJson(w, code, map[string]string{"error": msg})
@@ -241,9 +273,6 @@ func respondWithJson(w http.ResponseWriter, code int, payload interface{}) {
 func StartRouter() {
 	//fire up the gorilla router
 	r := mux.NewRouter()
-
-	//Make my timers map which should be accessible by this file
-	timers = make(map[int]*time.Timer)
 
 	//Endpoints
 	r.HandleFunc("/receive-webhook/support-test", WebhookEndpoint).Methods("POST")

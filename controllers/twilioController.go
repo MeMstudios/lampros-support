@@ -22,41 +22,77 @@ func SendTwilioMessage(toNumber, message string) TwilioMessageResponse {
 	return resp
 }
 
-//IDea is to call this function which starts a big timer for one hour (the maximum response time for urgent tickets)
-//This would start tickers to fire off the various levels of urgent texts possibly culminating in a call if not stopped
-//Timers could move to their own controller, but I figured their function mostly has to do with twilio.
-func StartUrgentTimer() *time.Timer {
-	//For 45 minutes send a text every five minutes
-	bigTimer := time.NewTimer(time.Minute * 6)
-	bigTicker := time.NewTicker(time.Minute * 5)
-	go func() {
-		for t := range bigTicker.C {
-			SendTwilioMessage("+18592402898", "You have an urgent support ticket that hasn't been responded to.  Please check your email and respond!")
-			fmt.Println("Sent semi-urgent text at:", t)
-		}
-	}()
-	//start a go process so we can continue on and return the timer
-	go func() {
-		//After 45 minutes start sending texts every minute
-		<-bigTimer.C
-		bigTicker.Stop()
-		littleTimer := time.NewTimer(time.Minute * 14)
-		littleTicker := time.NewTicker(time.Minute)
-		go func() {
-			for t := range littleTicker.C {
-				SendTwilioMessage("+18592402898", "You have an urgent support ticket that hasn't been responded to.  PLEASE RESPOND OR YOU WILL BE FINED!")
-				fmt.Println("Sent urgent text at:", t)
-			}
-		}()
-		<-littleTimer.C
-		littleTicker.Stop()
-	}()
-	return bigTimer
+//This function starts a big timer for one hour (the maximum response time for urgent tickets)
+//This starts tickers to fire off the various levels of urgent texts.
+func StartUrgentTimer(gid, taskId, urgency int) ChanTimer {
+	var timer *time.Timer
+	var ticker *time.Ticker
+	switch urgency {
+	case 0:
+		timer = time.NewTimer(time.Minute * 20)
+		ticker = time.NewTicker(time.Minute * 10)
+	case 1:
+		timer = time.NewTimer(time.Minute * 45)
+		ticker = time.NewTicker(time.Minute * 5)
+	case 2:
+		timer = time.NewTimer(time.Minute * 14)
+		ticker = time.NewTicker(time.Minute)
+	}
+
+	//This is how I send a message to a channel associated with the timer.
+	var channelTimer ChanTimer
+	channelTimer.Gid = gid
+	channelTimer.TaskId = taskId
+	channelTimer.Timer = timer
+	channelTimer.Ticker = ticker
+	// go func() {
+	// 	for t := range ticker.C {
+	// 		SendTwilioMessage("+18592402898", "You have an urgent support ticket that hasn't been responded to.  Please check your email and respond!")
+	// 		fmt.Println("Sent semi-urgent text at:", t)
+	// 	}
+	// }()
+	// //start a go process so we can continue on and return the timer
+	// go func() {
+	// 	//After 45 minutes start sending texts every minute
+	// 	<-timer.C
+	// 	ticker.Stop()
+	// 	fmt.Println("big timer stopped.")
+	// 	//If the stop channel has not been set to true it means the timer ran out on its own
+	// 	if !<-*channelTimer.Channel {
+	// 		fmt.Println("Starting short timer.")
+	// 		shortTimer := time.NewTimer(time.Minute * 14)
+	// 		shortTicker := time.NewTicker(time.Minute)
+	// 		go func() {
+	// 			for t := range shortTicker.C {
+	// 				SendTwilioMessage("+18592402898", "You have an urgent support ticket that hasn't been responded to.  PLEASE RESPOND OR YOU WILL BE FINED!")
+	// 				fmt.Println("Sent urgent text at:", t)
+	// 			}
+	// 		}()
+	// 		<-shortTimer.C
+	// 		shortTicker.Stop()
+	// 	}
+	// }()
+	return channelTimer
 }
 
-func StopTimer(timer *time.Timer) {
-	stopTime := timer.Stop()
+func StopTimer(timer ChanTimer) {
+	stopTime := timer.Timer.Stop()
+	timer.Ticker.Stop()
+	fmt.Println("Stop Tick and Time")
 	if !stopTime {
-		<-timer.C
+		fmt.Println("Not stopped.  Flushing toilet.")
+		<-timer.Timer.C
 	}
+	return
+}
+
+func DeleteFromTimers(timers []ChanTimer, timer ChanTimer) []ChanTimer {
+	if len(timers) > 1 {
+		for i, t := range timers {
+			if timer.Gid == t.Gid {
+				timers[i] = timers[len(timers)-1]
+			}
+		}
+	}
+	return timers[:len(timers)-1]
 }
