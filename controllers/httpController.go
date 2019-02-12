@@ -131,58 +131,85 @@ func WebhookEndpoint(w http.ResponseWriter, r *http.Request) {
 	}
 	events := event.Events
 	fmt.Println("Got events.")
-	//EMAIL RECIPIENTS
-	recips := []string{"michael@lamproslabs.com"}
 	for _, e := range events {
-		fmt.Println("Type: " + e.Type)
-		fmt.Println("Action: " + e.Action)
-		fmt.Println("Created at: " + e.Created)
-		fmt.Printf("Parent: %d\n", e.Parent)
-		fmt.Printf("ID: %d\n", e.Resource)
-		switch e.Type {
-		case "task":
-			if e.Action == "added" {
-				taskId := strconv.Itoa(e.Resource)
-				task := GetTask(string(taskId))
-				emails := GetMessages("me")
-				for _, e := range emails {
-					subject := GetSubject(e.Id)
-					sender := GetSender(e.Id)
-					senderDomain := strings.Split(sender, "@")
-					senderArr := []string{sender} //Needed for SendEmail
-					if !CheckProjectEmail(sender) && senderDomain[1] != "asana.com" && senderDomain[1] != "mail.asana.com" {
-						SendEmail("Please add the new user email: "+sender+" to the support project: https://app.asana.com/0/"+SupportProjectID+"\nThen add them to the request: https://app.asana.com/0/"+SupportProjectID+"/"+taskId, "New User Detected for Support.", recips)
-						SendEmail("Thank you for your for your request to Lampros Support. \nWe do not recognize your email.  You will need to be added to Asana to recieve support notifications. \nWe will confirm your email and add you to your support project. \nWe will contact you directly if we need more information. \n\n Thank you, \n\n -Lampros Labs Team \n", "New Software Support Request", senderArr)
-					} else {
-						fmt.Println("Follower found: " + sender)
-						if subject == task.Name {
-							fmt.Println("Trying to add to task")
-							UpdateTaskFollowers(sender, task.Gid)
-						}
-					}
-				}
-				UpdateTaskTags(task)
-			}
-		case "story":
-			if e.Action == "added" && e.Parent != 0 {
-				taskId := strconv.Itoa(e.Parent)
-				if TaskIsUrgent(taskId) {
-					fmt.Println("URGENT TASK DETECTED")
-				}
-			}
-		case "webhook":
+		if e.Type == "webhook" {
+			//IF initiating webhook, stop here and send back the x-hook-secret
+			fmt.Println("Creating Webhook!")
 			hookSecret := r.Header.Get("X-Hook-Signature")
-			fmt.Println("Hoook secret: " + hookSecret)
 			w.Header().Set("X-Hook-Secret", hookSecret)
 			w.WriteHeader(http.StatusOK)
 			w.Write([]byte(""))
 			return
+		} else {
+			//Otherwise, start a goroutine to hand all the events individually.
+			go handleEvent(e)
 		}
 	}
+
 	fmt.Println("///////////////////////Completed Webhook//////////////////")
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte("thanks"))
-	return
+}
+
+func handleEvent(e Event) {
+	//EMAIL RECIPIENTS
+	recips := []string{"michael@lamproslabs.com"}
+
+	fmt.Println("Type: " + e.Type)
+	fmt.Println("Action: " + e.Action)
+	fmt.Println("Created at: " + e.Created)
+	fmt.Printf("Parent: %d\n", e.Parent)
+	fmt.Printf("ID: %d\n", e.Resource)
+	switch e.Type {
+	case "task":
+		if e.Action == "added" {
+			taskId := strconv.Itoa(e.Resource)
+			task := GetTask(string(taskId))
+			emails := GetMessages("me")
+			for _, e := range emails {
+				subject := GetSubject(e.Id)
+				sender := GetSender(e.Id)
+				senderDomain := strings.Split(sender, "@")
+				senderArr := []string{sender} //Needed for SendEmail
+				if !CheckProjectEmail(sender) && senderDomain[1] != "asana.com" && senderDomain[1] != "mail.asana.com" {
+					SendEmail("Please add the new user email: "+sender+" to the support project: https://app.asana.com/0/"+SupportProjectID+"\nThen add them to the request: https://app.asana.com/0/"+SupportProjectID+"/"+taskId, "New User Detected for Support.", recips)
+					SendEmail("Thank you for your for your request to Lampros Support. \nWe do not recognize your email.  You will need to be added to Asana to recieve support notifications. \nWe will confirm your email and add you to your support project. \nWe will contact you directly if we need more information. \n\n Thank you, \n\n -Lampros Labs Team \n", "New Software Support Request", senderArr)
+				} else {
+					fmt.Println("Follower found: " + sender)
+					if subject == task.Name {
+						fmt.Println("Trying to add to task")
+						UpdateTaskFollowers(sender, task.Gid)
+					}
+				}
+			}
+			UpdateTaskTags(task)
+		}
+	case "story":
+		if e.Action == "added" && e.Parent != 0 {
+			taskId := strconv.Itoa(e.Parent)
+			storyId := strconv.Itoa(e.Resource)
+			if TaskIsUrgent(taskId) {
+				fmt.Println("URGENT TASK DETECTED")
+				story := GetStory(storyId)
+				if story.StoryType == "added_to_tag" {
+					//START TIMERS
+					fmt.Println("Urgent Tag Added.")
+					SendEmail("You have a new urgent ticket please respond immediately: https://app.asana.com/0/"+SupportProjectID+"/"+taskId, "URGENT REQUEST PLEASE RESPOND", recips)
+				}
+				if story.StoryType == "comment_added" {
+					fmt.Println("Comment Added")
+					commenter := GetUser(story.CreatedBy.Gid)
+					commenterEmailParts := strings.Split(commenter.Email, "@")
+					commenterEmailDomain := commenterEmailParts[1]
+					if commenterEmailDomain == "lamproslabs.com" {
+						//STOP THE TIMERS Not sure how I'm going to stop timers started by other processes.  Maybe twilio has a service that can do the timer for me.  maybe I can stop it with a post request.
+
+						fmt.Println("Comment made by support team.")
+					}
+				}
+			}
+		}
+	}
 }
 
 func checkMAC(message, sentMAC string) bool {
