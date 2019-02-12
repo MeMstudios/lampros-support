@@ -11,11 +11,14 @@ import (
 	"net/url"
 	"strconv"
 	"strings"
+	"time"
 
 	. "lampros-support/models"
 
 	"github.com/gorilla/mux"
 )
+
+var timers map[int]*time.Timer
 
 //GET a JSON response from an API
 func getAsanaResponse(request string) []byte {
@@ -154,7 +157,6 @@ func WebhookEndpoint(w http.ResponseWriter, r *http.Request) {
 func handleEvent(e Event) {
 	//EMAIL RECIPIENTS
 	recips := []string{"michael@lamproslabs.com"}
-
 	fmt.Println("Type: " + e.Type)
 	fmt.Println("Action: " + e.Action)
 	fmt.Println("Created at: " + e.Created)
@@ -192,7 +194,9 @@ func handleEvent(e Event) {
 				fmt.Println("URGENT TASK DETECTED")
 				story := GetStory(storyId)
 				if story.StoryType == "added_to_tag" {
-					//START TIMERS
+					timer := StartUrgentTimer()
+					//Add the timer to the timer map using the task id as key.
+					timers[e.Resource] = timer
 					fmt.Println("Urgent Tag Added.")
 					SendEmail("You have a new urgent ticket please respond immediately: https://app.asana.com/0/"+SupportProjectID+"/"+taskId, "URGENT REQUEST PLEASE RESPOND", recips)
 				}
@@ -202,8 +206,10 @@ func handleEvent(e Event) {
 					commenterEmailParts := strings.Split(commenter.Email, "@")
 					commenterEmailDomain := commenterEmailParts[1]
 					if commenterEmailDomain == "lamproslabs.com" {
-						//STOP THE TIMERS Not sure how I'm going to stop timers started by other processes.  Maybe twilio has a service that can do the timer for me.  maybe I can stop it with a post request.
-
+						//STOP THE TIMERS by finding them in the map with the task id key.
+						if timers[e.Resource] != nil {
+							StopTimer(timers[e.Resource])
+						}
 						fmt.Println("Comment made by support team.")
 					}
 				}
@@ -235,6 +241,9 @@ func respondWithJson(w http.ResponseWriter, code int, payload interface{}) {
 func StartRouter() {
 	//fire up the gorilla router
 	r := mux.NewRouter()
+
+	//Make my timers map which should be accessible by this file
+	timers = make(map[int]*time.Timer)
 
 	//Endpoints
 	r.HandleFunc("/receive-webhook/support-test", WebhookEndpoint).Methods("POST")

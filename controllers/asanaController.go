@@ -66,8 +66,7 @@ func GetUser(userId string) User {
 }
 
 func UpdateTaskTags(task Task) {
-	var params map[string]string
-	params = make(map[string]string)
+	params := make(map[string]string)
 	params["tag"] = UrgentTagGid
 
 	//Check if the task description(email body) or name(email subject) contains urgent (case-insensitive )
