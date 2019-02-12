@@ -2,7 +2,7 @@ package models
 
 import "time"
 
-type ChanTimer struct {
+type TickerTimer struct {
 	Gid    int
 	TaskId int
 	Timer  *time.Timer

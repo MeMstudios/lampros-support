@@ -24,7 +24,7 @@ func SendTwilioMessage(toNumber, message string) TwilioMessageResponse {
 
 //This function starts a big timer for one hour (the maximum response time for urgent tickets)
 //This starts tickers to fire off the various levels of urgent texts.
-func StartUrgentTimer(gid, taskId, urgency int) ChanTimer {
+func StartUrgentTimer(gid, taskId, urgency int) TickerTimer {
 	var timer *time.Timer
 	var ticker *time.Ticker
 	switch urgency {
@@ -40,7 +40,7 @@ func StartUrgentTimer(gid, taskId, urgency int) ChanTimer {
 	}
 
 	//This is how I send a message to a channel associated with the timer.
-	var channelTimer ChanTimer
+	var channelTimer TickerTimer
 	channelTimer.Gid = gid
 	channelTimer.TaskId = taskId
 	channelTimer.Timer = timer
@@ -75,7 +75,7 @@ func StartUrgentTimer(gid, taskId, urgency int) ChanTimer {
 	return channelTimer
 }
 
-func StopTimer(timer ChanTimer) {
+func StopTimer(timer TickerTimer) {
 	stopTime := timer.Timer.Stop()
 	timer.Ticker.Stop()
 	fmt.Println("Stop Tick and Time")
@@ -86,7 +86,7 @@ func StopTimer(timer ChanTimer) {
 	return
 }
 
-func DeleteFromTimers(timers []ChanTimer, timer ChanTimer) []ChanTimer {
+func DeleteFromTimers(timers []TickerTimer, timer TickerTimer) []TickerTimer {
 	if len(timers) > 1 {
 		for i, t := range timers {
 			if timer.Gid == t.Gid {

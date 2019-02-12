@@ -16,7 +16,7 @@ import (
 )
 
 //Make my timers array which should be accessible by this file
-var timers []ChanTimer
+var timers []TickerTimer
 
 //GET a JSON response from an API
 func getAsanaResponse(request string) []byte {
