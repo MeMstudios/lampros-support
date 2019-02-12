@@ -5,9 +5,6 @@
 *.so
 *.dylib
 
-# Main binary
-./lampros-support
-
 # Test binary, build with `go test -c`
 *.test
 
@@ -18,3 +15,6 @@
 controllers/credentials.go
 credentials.json
 token.json
+
+# Main binary
+./lampros-support
