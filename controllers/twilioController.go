@@ -45,33 +45,6 @@ func StartUrgentTimer(gid, taskId, urgency int) TickerTimer {
 	channelTimer.TaskId = taskId
 	channelTimer.Timer = timer
 	channelTimer.Ticker = ticker
-	// go func() {
-	// 	for t := range ticker.C {
-	// 		SendTwilioMessage("+18592402898", "You have an urgent support ticket that hasn't been responded to.  Please check your email and respond!")
-	// 		fmt.Println("Sent semi-urgent text at:", t)
-	// 	}
-	// }()
-	// //start a go process so we can continue on and return the timer
-	// go func() {
-	// 	//After 45 minutes start sending texts every minute
-	// 	<-timer.C
-	// 	ticker.Stop()
-	// 	fmt.Println("big timer stopped.")
-	// 	//If the stop channel has not been set to true it means the timer ran out on its own
-	// 	if !<-*channelTimer.Channel {
-	// 		fmt.Println("Starting short timer.")
-	// 		shortTimer := time.NewTimer(time.Minute * 14)
-	// 		shortTicker := time.NewTicker(time.Minute)
-	// 		go func() {
-	// 			for t := range shortTicker.C {
-	// 				SendTwilioMessage("+18592402898", "You have an urgent support ticket that hasn't been responded to.  PLEASE RESPOND OR YOU WILL BE FINED!")
-	// 				fmt.Println("Sent urgent text at:", t)
-	// 			}
-	// 		}()
-	// 		<-shortTimer.C
-	// 		shortTicker.Stop()
-	// 	}
-	// }()
 	return channelTimer
 }
 
