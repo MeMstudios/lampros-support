@@ -22,12 +22,15 @@ You will need a credentials.go file in the controllers folder which looks someth
 `const AsanaAccessToken = ""`
 
 `const EmailAddress = ""`
+
 `const Password = ""`
 
 `const TwilioSecret = ""`
+
 `const TwilioVoiceSID = ""`
 
 `const TwilioSID = ""`
+
 `const TwilioAUTH = ""`
 
 where `EmailAddress` and `Password` are for an email account that will send mail notifications.
