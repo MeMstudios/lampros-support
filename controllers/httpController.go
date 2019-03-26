@@ -132,19 +132,21 @@ func WebhookEndpoint(w http.ResponseWriter, r *http.Request) {
 	}
 	events := event.Events
 	fmt.Println("Got events.")
+	if len(event.Errors) > 0 {
+		log.Fatal(event.Errors)
+	}
+	if len(events) == 0 {
+		//IF initiating webhook, stop here and send back the x-hook-secret
+		fmt.Println("Creating Webhook!")
+		hookSecret := r.Header.Get("X-Hook-Secret")
+		w.Header().Set("X-Hook-Secret", hookSecret)
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte("thanks"))
+		return
+	}
 	for _, e := range events {
-		if e.Type == "webhook" {
-			//IF initiating webhook, stop here and send back the x-hook-secret
-			fmt.Println("Creating Webhook!")
-			hookSecret := r.Header.Get("X-Hook-Signature")
-			w.Header().Set("X-Hook-Secret", hookSecret)
-			w.WriteHeader(http.StatusOK)
-			w.Write([]byte(""))
-			return
-		} else {
-			//Otherwise, start a goroutine to hand all the events individually.
-			go handleEvent(e)
-		}
+		//Otherwise, start a goroutine to hand all the events individually.
+		go handleEvent(e)
 	}
 
 	fmt.Println("///////////////////////Completed Webhook//////////////////")
@@ -153,8 +155,6 @@ func WebhookEndpoint(w http.ResponseWriter, r *http.Request) {
 }
 
 func handleEvent(e Event) {
-	//EMAIL RECIPIENTS
-	recips := []string{"michael@lamproslabs.com"}
 	fmt.Println("Type: " + e.Type)
 	fmt.Println("Action: " + e.Action)
 	fmt.Println("Created at: " + e.Created)
@@ -171,7 +171,7 @@ func handleEvent(e Event) {
 				sender := GetSender(e.Id)
 				senderDomain := strings.Split(sender, "@")
 				senderArr := []string{sender} //Needed for SendEmail
-				if !CheckProjectEmail(sender) && senderDomain[1] != "asana.com" && senderDomain[1] != "mail.asana.com" {
+				if !CheckProjectEmail(sender) && !CaseInsensitiveContains(senderDomain[1], "asana.com") {
 					SendEmail("Please add the new user email: "+sender+" to the support project: https://app.asana.com/0/"+SupportProjectID+"\nThen add them to the request: https://app.asana.com/0/"+SupportProjectID+"/"+taskId, "New User Detected for Support.", recips)
 					SendEmail("Thank you for your for your request to Lampros Support. \nWe do not recognize your email.  You will need to be added to Asana to recieve support notifications. \nWe will confirm your email and add you to your support project. \nWe will contact you directly if we need more information. \n\n Thank you, \n\n -Lampros Labs Team \n", "New Software Support Request", senderArr)
 				} else {
@@ -197,7 +197,7 @@ func handleEvent(e Event) {
 					timers = append(timers, bigTimer)
 					go func() {
 						for t := range bigTimer.Ticker.C {
-							SendTwilioMessage("+18592402898", "You have an urgent support ticket that hasn't been responded to.  Please check your email and respond!")
+							SendTwilioMessage("+18592402898", "You have an urgent support ticket that hasn't been responded to.  Please check your email and respond! https://app.asana.com/0/"+SupportProjectID+"/"+taskId)
 							fmt.Println("Sent semi-urgent text at:", t)
 						}
 					}()
@@ -212,7 +212,7 @@ func handleEvent(e Event) {
 						fmt.Println("Started short timer.")
 						go func() {
 							for t := range timer.Ticker.C {
-								SendTwilioMessage("+18592402898", "You have an urgent support ticket that hasn't been responded to.  PLEASE RESPOND OR YOU WILL BE FINED!")
+								SendTwilioMessage("+18592402898", "You have an urgent support ticket that hasn't been responded to.  PLEASE RESPOND OR YOU WILL BE FINED! https://app.asana.com/0/"+SupportProjectID+"/"+taskId)
 								fmt.Println("Sent urgent text at:", t)
 							}
 						}()
@@ -281,7 +281,7 @@ func StartRouter() {
 	if Environment == "prod" {
 		//Release the hounds
 		fmt.Println("Releasing the hounds securely.")
-		if err := http.ListenAndServeTLS(":443", "fullchain.pem", "privkey.pem", r); err != nil {
+		if err := http.ListenAndServeTLS(":4443", "fullchain.pem", "privkey.pem", r); err != nil {
 			log.Fatal(err)
 		}
 	} else {

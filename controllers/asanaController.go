@@ -70,7 +70,12 @@ func UpdateTaskTags(task Task) {
 	params["tag"] = UrgentTagGid
 
 	//Check if the task description(email body) or name(email subject) contains urgent (case-insensitive )
-	if CaseInsensitiveContains(task.Notes, "urgent") || CaseInsensitiveContains(task.Name, "urgent") {
+	if CaseInsensitiveContains(task.Name, "urgent") ||
+		CaseInsensitiveContains(task.Notes, "urgent") ||
+		CaseInsensitiveContains(task.Name, "asap") ||
+		CaseInsensitiveContains(task.Notes, "asap") ||
+		CaseInsensitiveContains(task.Name, "important") ||
+		CaseInsensitiveContains(task.Notes, "important") {
 		//Add the urgent tag
 		respData := postAsanaRequest(params, parseUrl(AsanaBase+"/tasks/"+task.Gid+"/addTag"))
 		var resp Response

@@ -24,15 +24,31 @@ func SendTwilioMessage(toNumber, message string) TwilioMessageResponse {
 
 //This function starts a big timer for one hour (the maximum response time for urgent tickets)
 //This starts tickers to fire off the various levels of urgent texts.
+//From the agreement:
+//If reported issues are marked as emergency or high-priority when reported,
+//the company will provide a response within 1 hour during normal business hours as defined above,
+//3 hours if the report is made outside of normal business hours,
+//and 6 hours if during the holiday.
 func StartUrgentTimer(gid, taskId, urgency int) TickerTimer {
 	var timer *time.Timer
 	var ticker *time.Ticker
+	loc, err := time.LoadLocation("America/New_York")
+	if err != nil {
+		fmt.Println("Error with timezone!")
+	}
+	now := time.Now().In(loc)
+	hour := now.Hour()
+	fmt.Printf("Hour of the day: %d\n", hour)
 	switch urgency {
 	case 0:
 		timer = time.NewTimer(time.Minute * 20)
 		ticker = time.NewTicker(time.Minute * 10)
 	case 1:
-		timer = time.NewTimer(time.Minute * 45)
+		if hour < 9 || hour > 17 {
+			timer = time.NewTimer(time.Minute * 165)
+		} else {
+			timer = time.NewTimer(time.Minute * 45)
+		}
 		ticker = time.NewTicker(time.Minute * 5)
 	case 2:
 		timer = time.NewTimer(time.Minute * 14)

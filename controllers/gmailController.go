@@ -138,12 +138,12 @@ func GetSender(id string) string {
 
 func GetMessages(user string) []*gmail.Message {
 	api := startGmailClient()
-	mesList, err := api.Users.Messages.List(user).Q("to:testsoftwaresupport@lamproslabs.com is:unread").Do()
+	mesList, err := api.Users.Messages.List(user).Q("to:" + SupportEmailAddress + " is:unread").Do()
 	if err != nil {
 		log.Fatalf("Failed to get messages: %v", err)
 	}
 	if len(mesList.Messages) == 0 {
-		fmt.Println("No messages to testsoftwaresupport@lamproslabs.com")
+		fmt.Println("No messages to " + SupportEmailAddress)
 	}
 	return mesList.Messages
 }
