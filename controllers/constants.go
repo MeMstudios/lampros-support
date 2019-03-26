@@ -11,9 +11,12 @@ const ResolvedTagGid = "1107602815071862"
 const SupportEmailAddress = "testsoftwaresupport@lamproslabs.com"
 
 //EMAIL RECIPIENTS
-var recips = []string{"michael@lamproslabs.com"}
+var recips = []string{"michael@lamproslabs.com", "troy@lamproslabs.com"}
 
-const TwilioNumber = "+18594465953"
+//TEXT RECIPIENTS
+var toNumbers = []string{"+18592402898", "+15132366510"}
+
+const TwilioNumber = "+15132366510"
 const TwiML = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
 	"<Response>\n" +
 	"<Say voice=\"man\">You have an urgent support ticket that hasn't been responded to.  Please respond or face the consequences!</Say>\n" +

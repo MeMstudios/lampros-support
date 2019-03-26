@@ -73,7 +73,7 @@ func saveToken(path string, token *oauth2.Token) {
 	json.NewEncoder(f).Encode(token)
 }
 
-func startGmailClient() *gmail.Service {
+func StartGmailClient() *gmail.Service {
 	b, err := ioutil.ReadFile("credentials.json")
 	if err != nil {
 		log.Fatalf("Unable to read client secret file: %v", err)
@@ -94,7 +94,7 @@ func startGmailClient() *gmail.Service {
 }
 
 func GetSenders() []string {
-	api := startGmailClient()
+	api := StartGmailClient()
 	user := "me"
 	messages := GetMessages(user)
 	var froms []string
@@ -118,7 +118,7 @@ func GetSenders() []string {
 }
 
 func GetSender(id string) string {
-	api := startGmailClient()
+	api := StartGmailClient()
 	user := "me"
 	meta, err := api.Users.Messages.Get(user, id).Format("metadata").Do()
 	if err != nil {
@@ -137,7 +137,7 @@ func GetSender(id string) string {
 }
 
 func GetMessages(user string) []*gmail.Message {
-	api := startGmailClient()
+	api := StartGmailClient()
 	mesList, err := api.Users.Messages.List(user).Q("to:" + SupportEmailAddress + " is:unread").Do()
 	if err != nil {
 		log.Fatalf("Failed to get messages: %v", err)
@@ -149,7 +149,7 @@ func GetMessages(user string) []*gmail.Message {
 }
 
 func GetSubject(id string) string {
-	api := startGmailClient()
+	api := StartGmailClient()
 	user := "me"
 	meta, err := api.Users.Messages.Get(user, id).Format("metadata").Do()
 	if err != nil {

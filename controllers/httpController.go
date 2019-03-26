@@ -197,8 +197,10 @@ func handleEvent(e Event) {
 					timers = append(timers, bigTimer)
 					go func() {
 						for t := range bigTimer.Ticker.C {
-							SendTwilioMessage("+18592402898", "You have an urgent support ticket that hasn't been responded to.  Please check your email and respond! https://app.asana.com/0/"+SupportProjectID+"/"+taskId)
-							fmt.Println("Sent semi-urgent text at:", t)
+							for _, n := range toNumbers {
+								SendTwilioMessage(n, "You have an urgent support ticket that hasn't been responded to.  Please check your email and respond! https://app.asana.com/0/"+SupportProjectID+"/"+taskId)
+								fmt.Println("Sent semi-urgent text at:", t)
+							}
 						}
 					}()
 					go func() {
@@ -212,8 +214,10 @@ func handleEvent(e Event) {
 						fmt.Println("Started short timer.")
 						go func() {
 							for t := range timer.Ticker.C {
-								SendTwilioMessage("+18592402898", "You have an urgent support ticket that hasn't been responded to.  PLEASE RESPOND OR YOU WILL BE FINED! https://app.asana.com/0/"+SupportProjectID+"/"+taskId)
-								fmt.Println("Sent urgent text at:", t)
+								for _, n := range toNumbers {
+									SendTwilioMessage(n, "You have an urgent support ticket that hasn't been responded to.  PLEASE RESPOND OR YOU WILL BE FINED! https://app.asana.com/0/"+SupportProjectID+"/"+taskId)
+									fmt.Println("Sent urgent text at:", t)
+								}
 							}
 						}()
 						go func() {
@@ -281,7 +285,7 @@ func StartRouter() {
 	if Environment == "prod" {
 		//Release the hounds
 		fmt.Println("Releasing the hounds securely.")
-		if err := http.ListenAndServeTLS(":4443", "fullchain.pem", "privkey.pem", r); err != nil {
+		if err := http.ListenAndServeTLS(":4443", "/etc/letsencrypt/live/supportapi.lamproslabs.com/fullchain.pem", "/etc/letsencrypt/live/supportapi.lamproslabs.com/privkey.pem", r); err != nil {
 			log.Fatal(err)
 		}
 	} else {
