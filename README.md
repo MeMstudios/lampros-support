@@ -45,7 +45,7 @@ This requires you to have the fullchain.pem and privkey.pem in the same folder, 
 Deployment
 ---
 It's currently running on a Linux AMI machine as a service.  This setup will be different based on what kind of machine you're running.  If you can get sudo access to the server where it's hosted you can `service lampros-support stop` or `service lampros-support start` or `service lampros-support restart`
-the binary file is uploaded to `/home/michael/go/src/`
+the binary file is uploaded to `/home/michael/go/src/` you must stop the service to upload and then start again. Log can be found: `/var/log/lampros-support.log`
 
 
 
