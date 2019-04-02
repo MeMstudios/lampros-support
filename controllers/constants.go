@@ -16,7 +16,7 @@ var recips = []string{"michael@lamproslabs.com", "troy@lamproslabs.com"}
 //TEXT RECIPIENTS
 var toNumbers = []string{"+18592402898", "+15132366510"}
 
-const TwilioNumber = "+15132366510"
+const TwilioNumber = "+15135862981"
 const TwiML = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
 	"<Response>\n" +
 	"<Say voice=\"man\">You have an urgent support ticket that hasn't been responded to.  Please respond or face the consequences!</Say>\n" +

@@ -139,6 +139,15 @@ func CaseInsensitiveContains(s, substr string) bool {
 	s, substr = strings.ToUpper(s), strings.ToUpper(substr)
 	return strings.Contains(s, substr)
 }
+func IsAsanaDomain(s string) bool {
+	substrings := strings.Split(s, ".")
+	for _, s := range substrings {
+		if s == "asana" {
+			return true
+		}
+	}
+	return false
+}
 
 func parseUrl(u string) string {
 	var Url *url.URL

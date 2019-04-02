@@ -23,7 +23,7 @@ func getClient(config *oauth2.Config) *http.Client {
 	// The file token.json stores the user's access and refresh tokens, and is
 	// created automatically when the authorization flow completes for the first
 	// time.
-	tokFile := "token.json"
+	tokFile := "/home/michael/go/src/token.json"
 	tok, err := tokenFromFile(tokFile)
 	if err != nil {
 		tok = getTokenFromWeb(config)
@@ -74,7 +74,7 @@ func saveToken(path string, token *oauth2.Token) {
 }
 
 func StartGmailClient() *gmail.Service {
-	b, err := ioutil.ReadFile("credentials.json")
+	b, err := ioutil.ReadFile("/home/michael/go/src/credentials.json")
 	if err != nil {
 		log.Fatalf("Unable to read client secret file: %v", err)
 	}
@@ -169,10 +169,11 @@ func SendEmail(body, subj string, recip []string) bool {
 
 	// Connect to the server, authenticate, set the sender and recipient,
 	// and send the email all in one step.
-	to := append(recip, "x+"+SupportProjectID+"@mail.asana.com")
+	to := recip //WHY did I have appending the asana address?
 	toHeader := "To: "
 	for _, r := range to {
 		toHeader += r + ","
+		fmt.Println("Sending message to: " + r)
 	}
 	msg := []byte(toHeader + "\r\n" +
 		"Subject: " + subj + "\r\n" +

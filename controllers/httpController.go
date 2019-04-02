@@ -171,7 +171,7 @@ func handleEvent(e Event) {
 				sender := GetSender(e.Id)
 				senderDomain := strings.Split(sender, "@")
 				senderArr := []string{sender} //Needed for SendEmail
-				if !CheckProjectEmail(sender) && !CaseInsensitiveContains(senderDomain[1], "asana.com") {
+				if !CheckProjectEmail(sender) && !IsAsanaDomain(senderDomain[1]) {
 					SendEmail("Please add the new user email: "+sender+" to the support project: https://app.asana.com/0/"+SupportProjectID+"\nThen add them to the request: https://app.asana.com/0/"+SupportProjectID+"/"+taskId, "New User Detected for Support.", recips)
 					SendEmail("Thank you for your for your request to Lampros Support. \nWe do not recognize your email.  You will need to be added to Asana to recieve support notifications. \nWe will confirm your email and add you to your support project. \nWe will contact you directly if we need more information. \n\n Thank you, \n\n -Lampros Labs Team \n", "New Software Support Request", senderArr)
 				} else {
