@@ -128,8 +128,18 @@ func CheckProjectEmail(userEmail string) bool {
 		logApiErrors(resp.Errors)
 	}
 	for _, f := range resp.ProjectFollowers.Followers {
-		if userEmail == f.Name {
-			return true
+		//If there's an error with this then they are a full blown user
+		user, err := GetUserByEmail(f.Name)
+		if err != nil { //You should be able to get the user by the follower's id
+			user = GetUser(f.Gid)
+			if userEmail == user.Email {
+				return true
+			}
+		} else {
+			//If the follower is not a full user in Asana the name will match the email.
+			if userEmail == f.Name {
+				return true
+			}
 		}
 	}
 	return false
