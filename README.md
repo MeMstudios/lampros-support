@@ -42,5 +42,10 @@ Contains the recips, which is everyone who should recieve the email notification
 When `Environment` is set to `prod` the app will "release the hounds securely" (starting up with SSL).
 This requires you to have the fullchain.pem and privkey.pem in the same folder, or update the code in httpController to have the full path to those files.
 
+Deployment
+---
+It's currently running on a Linux AMI machine as a service.  This setup will be different based on what kind of machine you're running.  If you can get sudo access to the server where it's hosted you can `service lampros-support stop` or `service lampros-support start` or `service lampros-support restart`
+the binary file is uploaded to `/home/michael/go/src/`
+
 
 
