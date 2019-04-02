@@ -4,6 +4,7 @@ install golang and cd into the folder
 running `go build` should require you to setup Google OAuth for the gmail library. (Follow the instructions from the command line.)
 [this may help](https://developers.google.com/gmail/api/auth/web-server)
 the credentials.json and token.json will need to be uploaded with the binary
+These are referenced by their full path on the server.
 
 Emails
 ---
