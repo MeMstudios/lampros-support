@@ -55,7 +55,7 @@ Usage
 ---
 You should not immediately respond to the initial email.  Wait until you get the software support notification and take the link to the Asana task and leave a comment there to respond.  Now everyone will be on the email list.  contact@lamproslabs.com and the support email address should not get Asana notifications.  
 Not all the support agents need to be added to the support group.  Troy gets emails from contact@lamproslabs.com anyway.  
-POST to the /add-agent endpoint to add an email and phone number send json body like: </br>
+POST to the /add-agent endpoint to add an email and phone number send json body like:  
 `{"email": "email@address.com", "phone": "+1234567890"}`
 and set a header called: `Api-Key` using the OurApiKey in constants.go  
 This is just in memory, so if you start and stop the service you'll have to add agents again, so just save a request in postman.
