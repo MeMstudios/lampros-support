@@ -15,6 +15,12 @@ import (
 	"github.com/gorilla/mux"
 )
 
+//EMAIL RECIPIENTS
+var recips = []string{"michael@lamproslabs.com", "troy@lamproslabs.com"}
+
+//TEXT RECIPIENTS
+var toNumbers = []string{"+18592402898", "+15132366510"}
+
 //Make my timers array which should be accessible by this file
 var timers []TickerTimer
 
@@ -108,6 +114,37 @@ func TestEndpoint(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 	w.Write(fuck)
 	fmt.Println("Fuck")
+}
+
+func AddAgentEndpoint(w http.ResponseWriter, r *http.Request) {
+	defer r.Body.Close()
+	var newAgent SupportAgent
+	response := []byte("")
+
+	if err := json.NewDecoder(r.Body).Decode(&newAgent); err != nil {
+		respondWithError(w, http.StatusBadRequest, "Invalid request payload")
+		fmt.Printf("invalid request payload: %v\n", err)
+		return
+	}
+	apiKey := r.Header.Get("Api-Key")
+	if apiKey != OurApiKey {
+		respondWithError(w, http.StatusBadRequest, "Fuck Off")
+		fmt.Println("invalid API key!")
+		return
+	} else {
+		if newAgent.Email != "" {
+			recips = append(recips, newAgent.Email)
+			fmt.Println("Added new email: " + newAgent.Email)
+		}
+		if newAgent.Phone != "" {
+			toNumbers = append(toNumbers, newAgent.Phone)
+			fmt.Println("Added new phone number: " + newAgent.Phone)
+		}
+		response = []byte("Added email and phone to support list.")
+	}
+	w.Header().Set("X-Hook-Secret", "12301985bugaloo120198")
+	w.WriteHeader(http.StatusOK)
+	w.Write(response)
 }
 
 //POST endpoint for Asana to send events in webhooks
@@ -284,6 +321,7 @@ func StartRouter() {
 	//Endpoints
 	r.HandleFunc("/receive-webhook/support-test", WebhookEndpoint).Methods("POST")
 	r.HandleFunc("/test", TestEndpoint).Methods("GET")
+	r.HandleFunc("/add-agent", AddAgentEndpoint).Methods("POST")
 
 	if Environment == "prod" {
 		//Release the hounds

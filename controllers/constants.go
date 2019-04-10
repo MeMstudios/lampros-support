@@ -10,11 +10,7 @@ const PendingTagGid = "1107602815071861"
 const ResolvedTagGid = "1107602815071862"
 const SupportEmailAddress = "testsoftwaresupport@lamproslabs.com"
 
-//EMAIL RECIPIENTS
-var recips = []string{"michael@lamproslabs.com", "troy@lamproslabs.com"}
-
-//TEXT RECIPIENTS
-var toNumbers = []string{"+18592402898", "+15132366510", "+011-923-323067175"}
+const OurApiKey = "130r882j44iwjq0392ujt0293i192ur0193igj2npe9u2309tuj"
 
 const TwilioNumber = "+15135862981"
 const TwiML = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +

@@ -9,8 +9,8 @@ These are referenced by their full path on the server.</br>
 Emails
 ---
 Create the group in Google Admin with the email for the client to send tickets to.</br>
-Add the team members and contact@lamproslabs.com to the group.</br>
-Create a filter in the contact@lamproslabs.com account to forward emails to the support project in Asana.</br>
+Add contact@lamproslabs.com to the group.</br>
+Create a filter in the contact@lamproslabs.com account to forward emails to the support project in Asana when the to: matches the software support email address.</br>
 The support email must be setup as a user in Asana and *TURN OFF EMAIL NOTIFICATIONS* or you will start an infinite email loop!</br>
 Client email addresses should be added to the Asana project.</br>
 
@@ -53,5 +53,10 @@ Log can be found: `/var/log/lampros-support.log`</br>
 
 Usage
 ---
-You should not immediately respond to the initial email.  Wait until you get the software support notification and take the link to the Asana task and leave a comment there to respond.  Now everyone will be on the email list.  contact@lamproslabs.com and the support email address should not get Asana notifications.
+You should not immediately respond to the initial email.  Wait until you get the software support notification and take the link to the Asana task and leave a comment there to respond.  Now everyone will be on the email list.  contact@lamproslabs.com and the support email address should not get Asana notifications. </br>
+Not all the support agents need to be added to the support group.  Troy gets emails from contact@lamproslabs.com anyway.</br>
+POST to the /add-agent endpoint to add an email and phone number send json body like: </br>
+`{"email": "email@address.com", "phone": "+1234567890"}`
+and set a header called: `Api-Key` using the OurApiKey in constants.go </br>
+This is just in memory, so if you start and stop the service you'll have to add agents again, so just save a request in postman.
 
