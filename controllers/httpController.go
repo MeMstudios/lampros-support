@@ -250,6 +250,7 @@ func handleEvent(e Event) {
 					}
 				}
 			}
+			SendEmail("You have a new support ticket please leave a comment on the asana ticket to respond and/or assign the task to yourself: https://app.asana.com/0/"+SupportProjectID+"/"+taskId, "Software Support Ticket", recips)
 		}
 	}
 }
