@@ -162,7 +162,8 @@ func handleEvent(e Event) {
 	fmt.Printf("ID: %d\n", e.Resource)
 	switch e.Type {
 	case "task":
-		if e.Action == "added" {
+		parentGID := strconv.Itoa(e.Parent)
+		if e.Action == "added" && parentGID == SupportProjectID {
 			taskId := strconv.Itoa(e.Resource)
 			task := GetTask(string(taskId))
 			emails := GetMessages("me")
@@ -181,16 +182,18 @@ func handleEvent(e Event) {
 						UpdateTaskFollowers(sender, task.Gid)
 					}
 				}
+				ReadMessage("me", e.Id)
 			}
+			SendEmail("You have a new support ticket please leave a comment on the asana ticket to respond and/or assign the task to yourself: https://app.asana.com/0/"+SupportProjectID+"/"+taskId, "New Software Support Ticket: "+task.Name, recips)
 			UpdateTaskTags(task)
 		}
 	case "story":
 		if e.Action == "added" && e.Parent != 0 {
 			taskId := strconv.Itoa(e.Parent)
 			storyId := strconv.Itoa(e.Resource)
+			story := GetStory(storyId)
 			if TaskIsUrgent(taskId) {
 				fmt.Println("URGENT TASK DETECTED")
-				story := GetStory(storyId)
 				if story.StoryType == "added_to_tag" {
 					bigTimer := StartUrgentTimer(e.Resource, e.Parent, 1)
 					//Add the timer to the timer array using the task id as key.
@@ -250,7 +253,6 @@ func handleEvent(e Event) {
 					}
 				}
 			}
-			SendEmail("You have a new support ticket please leave a comment on the asana ticket to respond and/or assign the task to yourself: https://app.asana.com/0/"+SupportProjectID+"/"+taskId, "Software Support Ticket", recips)
 		}
 	}
 }

@@ -80,7 +80,7 @@ func StartGmailClient() *gmail.Service {
 	}
 
 	// If modifying these scopes, delete your previously saved token.json.
-	config, err := google.ConfigFromJSON(b, gmail.GmailReadonlyScope)
+	config, err := google.ConfigFromJSON(b, gmail.GmailModifyScope)
 	if err != nil {
 		log.Fatalf("Unable to parse client secret file to config: %v", err)
 	}
@@ -146,6 +146,19 @@ func GetMessages(user string) []*gmail.Message {
 		fmt.Println("No messages to " + SupportEmailAddress)
 	}
 	return mesList.Messages
+}
+
+func ReadMessage(user string, id string) {
+	api := StartGmailClient()
+	var req gmail.ModifyMessageRequest
+	//req.AddLabelIds = append(req.AddLabelIds, "")
+	req.RemoveLabelIds = append(req.AddLabelIds, "UNREAD")
+	res, err := api.Users.Messages.Modify(user, id, &req).Do()
+	if err != nil {
+		fmt.Printf("response from Gmail: %v\n", err)
+	} else {
+		fmt.Println("Message read: " + res.Id)
+	}
 }
 
 func GetSubject(id string) string {
