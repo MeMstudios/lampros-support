@@ -7,6 +7,7 @@ import (
 	"log"
 	"net/http"
 	"net/url"
+	"os"
 	"strconv"
 	"strings"
 
@@ -16,10 +17,14 @@ import (
 )
 
 //EMAIL RECIPIENTS
-var recips = []string{"michael@lamproslabs.com", "troy@lamproslabs.com"}
+// var recips = []string{"michael@lamproslabs.com", "troy@lamproslabs.com"}
 
 //TEXT RECIPIENTS
-var toNumbers = []string{"+18592402898", "+15132366510"}
+// var toNumbers = []string{"+18592402898", "+15132366510"}
+
+var agents *Folks
+var recips []string
+var toNumbers []string
 
 //Make my timers array which should be accessible by this file
 var timers []TickerTimer
@@ -132,13 +137,10 @@ func AddAgentEndpoint(w http.ResponseWriter, r *http.Request) {
 		fmt.Println("invalid API key!")
 		return
 	} else {
-		if newAgent.Email != "" {
-			recips = append(recips, newAgent.Email)
-			fmt.Println("Added new email: " + newAgent.Email)
-		}
-		if newAgent.Phone != "" {
-			toNumbers = append(toNumbers, newAgent.Phone)
-			fmt.Println("Added new phone number: " + newAgent.Phone)
+		agents.Agents = append(agents.Agents, newAgent)
+		err := writeAgentsToJSON("/home/michael/go/src/agents.json")
+		if err != nil {
+			log.Fatalf("Error saving agent json: %v", err)
 		}
 		response = []byte("Added email and phone to support list.")
 	}
@@ -192,6 +194,15 @@ func WebhookEndpoint(w http.ResponseWriter, r *http.Request) {
 }
 
 func handleEvent(e Event) {
+	agents = readAgentJSON("/home/michael/go/src/agents.json")
+	var agentEmails []string
+	var agentNumbers []string
+	for _, a := range agents.Agents {
+		agentEmails = append(agentEmails, a.Email)
+		agentNumbers = append(agentNumbers, a.Phone)
+	}
+	recips = agentEmails
+	toNumbers = agentNumbers
 	fmt.Println("Type: " + e.Type)
 	fmt.Println("Action: " + e.Action)
 	fmt.Println("Created at: " + e.Created)
@@ -237,8 +248,8 @@ func handleEvent(e Event) {
 					timers = append(timers, bigTimer)
 					go func() {
 						for t := range bigTimer.Ticker.C {
-							for _, n := range toNumbers {
-								SendTwilioMessage(n, "You have an urgent support ticket that hasn't been responded to.  Please check your email and respond! https://app.asana.com/0/"+SupportProjectID+"/"+taskId)
+							for _, a := range agents.Agents {
+								SendTwilioMessage(a.Email, "You have an urgent support ticket that hasn't been responded to.  Please check your email and respond! https://app.asana.com/0/"+SupportProjectID+"/"+taskId)
 								fmt.Println("Sent semi-urgent text at:", t)
 							}
 						}
@@ -302,6 +313,32 @@ func handleEvent(e Event) {
 // 	fmt.Printf("%x\n", []byte(sentMAC))
 // 	return hmac.Equal([]byte(sentMAC), expectedMAC)
 // }
+
+func readAgentJSON(file string) *Folks {
+	f, err := os.Open(file)
+	if err != nil {
+		log.Fatalf("Couldn't read agent json: %v", err)
+	}
+	defer f.Close()
+	a := &Folks{}
+	err = json.NewDecoder(f).Decode(a)
+	if err != nil {
+		log.Fatalf("Error decoding agent json: %v", err)
+	}
+	return a
+}
+func writeAgentsToJSON(file string) error {
+	newAgentJSON, err := json.Marshal(agents)
+	if err != nil {
+		return err
+	}
+	err = ioutil.WriteFile(file, newAgentJSON, 0664)
+	if err != nil {
+		return err
+	}
+	fmt.Println("Saved agents to: " + file)
+	return nil
+}
 
 func respondWithError(w http.ResponseWriter, code int, msg string) {
 	respondWithJson(w, code, map[string]string{"error": msg})
