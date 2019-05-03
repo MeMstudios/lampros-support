@@ -15,6 +15,7 @@
 controllers/credentials.go
 credentials.json
 token.json
+agents.json
 
 # Main binary
 ./lampros-support

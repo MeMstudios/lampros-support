@@ -7,6 +7,7 @@ import (
 	"log"
 	"net/http"
 	"net/url"
+	"os"
 	"strconv"
 	"strings"
 
@@ -14,6 +15,16 @@ import (
 
 	"github.com/gorilla/mux"
 )
+
+//EMAIL RECIPIENTS
+// var recips = []string{"michael@lamproslabs.com", "troy@lamproslabs.com"}
+
+//TEXT RECIPIENTS
+// var toNumbers = []string{"+18592402898", "+15132366510"}
+
+var agents *Folks
+var recips []string
+var toNumbers []string
 
 //Make my timers array which should be accessible by this file
 var timers []TickerTimer
@@ -110,6 +121,34 @@ func TestEndpoint(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("Fuck")
 }
 
+func AddAgentEndpoint(w http.ResponseWriter, r *http.Request) {
+	defer r.Body.Close()
+	var newAgent SupportAgent
+	response := []byte("")
+
+	if err := json.NewDecoder(r.Body).Decode(&newAgent); err != nil {
+		respondWithError(w, http.StatusBadRequest, "Invalid request payload")
+		fmt.Printf("invalid request payload: %v\n", err)
+		return
+	}
+	apiKey := r.Header.Get("Api-Key")
+	if apiKey != OurApiKey {
+		respondWithError(w, http.StatusBadRequest, "Fuck Off")
+		fmt.Println("invalid API key!")
+		return
+	} else {
+		agents.Agents = append(agents.Agents, newAgent)
+		err := writeAgentsToJSON("/home/michael/go/src/agents.json")
+		if err != nil {
+			log.Fatalf("Error saving agent json: %v", err)
+		}
+		response = []byte("Added email and phone to support list.")
+	}
+	w.Header().Set("X-Hook-Secret", "12301985bugaloo120198")
+	w.WriteHeader(http.StatusOK)
+	w.Write(response)
+}
+
 //POST endpoint for Asana to send events in webhooks
 func WebhookEndpoint(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
@@ -155,6 +194,15 @@ func WebhookEndpoint(w http.ResponseWriter, r *http.Request) {
 }
 
 func handleEvent(e Event) {
+	agents = readAgentJSON("/home/michael/go/src/agents.json")
+	var agentEmails []string
+	var agentNumbers []string
+	for _, a := range agents.Agents {
+		agentEmails = append(agentEmails, a.Email)
+		agentNumbers = append(agentNumbers, a.Phone)
+	}
+	recips = agentEmails
+	toNumbers = agentNumbers
 	fmt.Println("Type: " + e.Type)
 	fmt.Println("Action: " + e.Action)
 	fmt.Println("Created at: " + e.Created)
@@ -162,7 +210,8 @@ func handleEvent(e Event) {
 	fmt.Printf("ID: %d\n", e.Resource)
 	switch e.Type {
 	case "task":
-		if e.Action == "added" {
+		parentGID := strconv.Itoa(e.Parent)
+		if e.Action == "added" && parentGID == SupportProjectID {
 			taskId := strconv.Itoa(e.Resource)
 			task := GetTask(string(taskId))
 			emails := GetMessages("me")
@@ -171,7 +220,7 @@ func handleEvent(e Event) {
 				sender := GetSender(e.Id)
 				senderDomain := strings.Split(sender, "@")
 				senderArr := []string{sender} //Needed for SendEmail
-				if !CheckProjectEmail(sender) && !CaseInsensitiveContains(senderDomain[1], "asana.com") {
+				if !CheckProjectEmail(sender) && !IsAsanaDomain(senderDomain[1]) {
 					SendEmail("Please add the new user email: "+sender+" to the support project: https://app.asana.com/0/"+SupportProjectID+"\nThen add them to the request: https://app.asana.com/0/"+SupportProjectID+"/"+taskId, "New User Detected for Support.", recips)
 					SendEmail("Thank you for your for your request to Lampros Support. \nWe do not recognize your email.  You will need to be added to Asana to recieve support notifications. \nWe will confirm your email and add you to your support project. \nWe will contact you directly if we need more information. \n\n Thank you, \n\n -Lampros Labs Team \n", "New Software Support Request", senderArr)
 				} else {
@@ -181,24 +230,28 @@ func handleEvent(e Event) {
 						UpdateTaskFollowers(sender, task.Gid)
 					}
 				}
+				ReadMessage("me", e.Id)
 			}
+			SendEmail("You have a new support ticket please leave a comment on the asana ticket to respond and/or assign the task to yourself: https://app.asana.com/0/"+SupportProjectID+"/"+taskId, "New Software Support Ticket: "+task.Name, recips)
 			UpdateTaskTags(task)
 		}
 	case "story":
 		if e.Action == "added" && e.Parent != 0 {
 			taskId := strconv.Itoa(e.Parent)
 			storyId := strconv.Itoa(e.Resource)
+			story := GetStory(storyId)
 			if TaskIsUrgent(taskId) {
 				fmt.Println("URGENT TASK DETECTED")
-				story := GetStory(storyId)
 				if story.StoryType == "added_to_tag" {
 					bigTimer := StartUrgentTimer(e.Resource, e.Parent, 1)
 					//Add the timer to the timer array using the task id as key.
 					timers = append(timers, bigTimer)
 					go func() {
 						for t := range bigTimer.Ticker.C {
-							SendTwilioMessage("+18592402898", "You have an urgent support ticket that hasn't been responded to.  Please check your email and respond! https://app.asana.com/0/"+SupportProjectID+"/"+taskId)
-							fmt.Println("Sent semi-urgent text at:", t)
+							for _, a := range agents.Agents {
+								SendTwilioMessage(a.Email, "You have an urgent support ticket that hasn't been responded to.  Please check your email and respond! https://app.asana.com/0/"+SupportProjectID+"/"+taskId)
+								fmt.Println("Sent semi-urgent text at:", t)
+							}
 						}
 					}()
 					go func() {
@@ -212,8 +265,10 @@ func handleEvent(e Event) {
 						fmt.Println("Started short timer.")
 						go func() {
 							for t := range timer.Ticker.C {
-								SendTwilioMessage("+18592402898", "You have an urgent support ticket that hasn't been responded to.  PLEASE RESPOND OR YOU WILL BE FINED! https://app.asana.com/0/"+SupportProjectID+"/"+taskId)
-								fmt.Println("Sent urgent text at:", t)
+								for _, n := range toNumbers {
+									SendTwilioMessage(n, "You have an urgent support ticket that hasn't been responded to.  PLEASE RESPOND OR YOU WILL BE FINED! https://app.asana.com/0/"+SupportProjectID+"/"+taskId)
+									fmt.Println("Sent urgent text at:", t)
+								}
 							}
 						}()
 						go func() {
@@ -259,6 +314,32 @@ func handleEvent(e Event) {
 // 	return hmac.Equal([]byte(sentMAC), expectedMAC)
 // }
 
+func readAgentJSON(file string) *Folks {
+	f, err := os.Open(file)
+	if err != nil {
+		log.Fatalf("Couldn't read agent json: %v", err)
+	}
+	defer f.Close()
+	a := &Folks{}
+	err = json.NewDecoder(f).Decode(a)
+	if err != nil {
+		log.Fatalf("Error decoding agent json: %v", err)
+	}
+	return a
+}
+func writeAgentsToJSON(file string) error {
+	newAgentJSON, err := json.Marshal(agents)
+	if err != nil {
+		return err
+	}
+	err = ioutil.WriteFile(file, newAgentJSON, 0664)
+	if err != nil {
+		return err
+	}
+	fmt.Println("Saved agents to: " + file)
+	return nil
+}
+
 func respondWithError(w http.ResponseWriter, code int, msg string) {
 	respondWithJson(w, code, map[string]string{"error": msg})
 }
@@ -277,11 +358,12 @@ func StartRouter() {
 	//Endpoints
 	r.HandleFunc("/receive-webhook/support-test", WebhookEndpoint).Methods("POST")
 	r.HandleFunc("/test", TestEndpoint).Methods("GET")
+	r.HandleFunc("/add-agent", AddAgentEndpoint).Methods("POST")
 
 	if Environment == "prod" {
 		//Release the hounds
 		fmt.Println("Releasing the hounds securely.")
-		if err := http.ListenAndServeTLS(":4443", "fullchain.pem", "privkey.pem", r); err != nil {
+		if err := http.ListenAndServeTLS(":4443", "/etc/letsencrypt/live/supportapi.lamproslabs.com/fullchain.pem", "/etc/letsencrypt/live/supportapi.lamproslabs.com/privkey.pem", r); err != nil {
 			log.Fatal(err)
 		}
 	} else {
