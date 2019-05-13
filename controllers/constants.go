@@ -3,7 +3,7 @@ package controllers
 const Environment = "prod" //checks for prod, anything else starts a normal server
 
 const AsanaBase = "https://app.asana.com/api/1.0"
-const SupportProjectID = "1107602815071855"
+const SupportProjectID = "851918708024767"
 const UrgentTagGid = "1107602815071859"
 const NewTagGid = "1107602815071860"
 const PendingTagGid = "1107602815071861"

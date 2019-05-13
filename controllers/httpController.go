@@ -16,12 +16,6 @@ import (
 	"github.com/gorilla/mux"
 )
 
-//EMAIL RECIPIENTS
-// var recips = []string{"michael@lamproslabs.com", "troy@lamproslabs.com"}
-
-//TEXT RECIPIENTS
-// var toNumbers = []string{"+18592402898", "+15132366510"}
-
 var agents *Folks
 var recips []string
 var toNumbers []string
@@ -133,7 +127,7 @@ func AddAgentEndpoint(w http.ResponseWriter, r *http.Request) {
 	}
 	apiKey := r.Header.Get("Api-Key")
 	if apiKey != OurApiKey {
-		respondWithError(w, http.StatusBadRequest, "Fuck Off")
+		respondWithError(w, http.StatusBadRequest, "something went wrong")
 		fmt.Println("invalid API key!")
 		return
 	} else {
@@ -144,7 +138,6 @@ func AddAgentEndpoint(w http.ResponseWriter, r *http.Request) {
 		}
 		response = []byte("Added email and phone to support list.")
 	}
-	w.Header().Set("X-Hook-Secret", "12301985bugaloo120198")
 	w.WriteHeader(http.StatusOK)
 	w.Write(response)
 }
@@ -176,12 +169,20 @@ func WebhookEndpoint(w http.ResponseWriter, r *http.Request) {
 	}
 	if len(events) == 0 {
 		//IF initiating webhook, stop here and send back the x-hook-secret
-		fmt.Println("Creating Webhook!")
 		hookSecret := r.Header.Get("X-Hook-Secret")
-		w.Header().Set("X-Hook-Secret", hookSecret)
-		w.WriteHeader(http.StatusOK)
-		w.Write([]byte("thanks"))
-		return
+		if hookSecret != "" { //hopefully enough to stop the HAXXORZ
+			fmt.Println("Creating Webhook!")
+			w.Header().Set("X-Hook-Secret", hookSecret)
+			w.WriteHeader(http.StatusOK)
+			w.Write([]byte("thanks"))
+			return
+		} else {
+			fmt.Println("Invalid Webhook!")
+			w.Header().Set("X-Hook-Secret", "INVALID")
+			w.WriteHeader(http.StatusForbidden)
+			w.Write([]byte(""))
+			return
+		}
 	}
 	for _, e := range events {
 		//Otherwise, start a goroutine to hand all the events individually.
@@ -248,8 +249,8 @@ func handleEvent(e Event) {
 					timers = append(timers, bigTimer)
 					go func() {
 						for t := range bigTimer.Ticker.C {
-							for _, a := range agents.Agents {
-								SendTwilioMessage(a.Email, "You have an urgent support ticket that hasn't been responded to.  Please check your email and respond! https://app.asana.com/0/"+SupportProjectID+"/"+taskId)
+							for _, n := range toNumbers {
+								SendTwilioMessage(n, "You have an urgent support ticket that hasn't been responded to.  Please check your email and respond! https://app.asana.com/0/"+SupportProjectID+"/"+taskId)
 								fmt.Println("Sent semi-urgent text at:", t)
 							}
 						}
@@ -356,8 +357,8 @@ func StartRouter() {
 	r := mux.NewRouter()
 
 	//Endpoints
-	r.HandleFunc("/receive-webhook/support-test", WebhookEndpoint).Methods("POST")
-	r.HandleFunc("/test", TestEndpoint).Methods("GET")
+	r.HandleFunc("/receive-webhook/13r98iof2jejqeg309ihe4oq9ug3029givje", WebhookEndpoint).Methods("POST")
+	//r.HandleFunc("/test", TestEndpoint).Methods("GET")
 	r.HandleFunc("/add-agent", AddAgentEndpoint).Methods("POST")
 
 	if Environment == "prod" {
