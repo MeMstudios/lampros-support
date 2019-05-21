@@ -93,30 +93,6 @@ func StartGmailClient() *gmail.Service {
 	return srv
 }
 
-func GetSenders() []string {
-	api := StartGmailClient()
-	user := "me"
-	messages := GetMessages(user)
-	var froms []string
-	//var headerRef gmail.MessagePartHeader
-	for _, m := range messages {
-		mesDeets, err := api.Users.Messages.Get(user, m.Id).Format("metadata").Do()
-		if err != nil {
-			log.Fatalf("Failed to get metadata")
-		}
-
-		for _, h := range mesDeets.Payload.Headers {
-			if h.Name == "From" {
-				fromSplit := strings.Split(h.Value, "<")
-				email := strings.Split(fromSplit[1], ">")
-				froms = append(froms, email[0])
-				fmt.Println("From: " + email[0])
-			}
-		}
-	}
-	return froms
-}
-
 func GetSender(id string) string {
 	api := StartGmailClient()
 	user := "me"
@@ -136,14 +112,14 @@ func GetSender(id string) string {
 	return from
 }
 
-func GetMessages(user string) []*gmail.Message {
+func GetMessages(user string, supportEmailAddress string) []*gmail.Message {
 	api := StartGmailClient()
-	mesList, err := api.Users.Messages.List(user).Q("to:" + SupportEmailAddress + " is:unread").Do()
+	mesList, err := api.Users.Messages.List(user).Q("to:" + supportEmailAddress + " is:unread").Do()
 	if err != nil {
 		log.Fatalf("Failed to get messages: %v", err)
 	}
 	if len(mesList.Messages) == 0 {
-		fmt.Println("No messages to " + SupportEmailAddress)
+		fmt.Println("No messages to " + supportEmailAddress)
 	}
 	return mesList.Messages
 }

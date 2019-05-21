@@ -11,8 +11,8 @@ import (
 )
 
 //Get task details from an asana project
-func GetTasks() []Task {
-	projectRespData := getAsanaResponse(parseUrl(AsanaBase + "/projects/" + SupportProjectID + "/tasks"))
+func GetTasks(supportProjectID string) []Task {
+	projectRespData := getAsanaResponse(parseUrl(AsanaBase + "/projects/" + supportProjectID + "/tasks"))
 
 	var projectResp Response
 	//unmarshal the data to the response object
@@ -119,9 +119,9 @@ func UpdateTaskFollowers(follower, taskId string) Response {
 	return resp
 }
 
-func CheckProjectEmail(userEmail string) bool {
+func CheckProjectEmail(userEmail string, supportProjectID string) bool {
 	//get all the followers on a project
-	projectResponseData := getAsanaResponse(parseUrl(AsanaBase + "/projects/" + SupportProjectID))
+	projectResponseData := getAsanaResponse(parseUrl(AsanaBase + "/projects/" + supportProjectID))
 	var resp ProjectFollowersResponse
 	json.Unmarshal(projectResponseData, &resp)
 	if len(resp.Errors) > 0 {
