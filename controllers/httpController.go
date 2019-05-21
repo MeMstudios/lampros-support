@@ -223,7 +223,6 @@ func WebhookEndpoint(w http.ResponseWriter, r *http.Request) {
 					}
 				}
 			}
-
 			//start a goroutine to hand all the events individually.
 			go handleEvent(e, agentEmails, agentNumbers, projectId, supportEmail)
 		}
