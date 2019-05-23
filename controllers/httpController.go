@@ -186,13 +186,13 @@ func WebhookEndpoint(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
+	//Since it's not invalid and we're not creating a new webhook, move on to handle events.
 	supportProjects := readProjectsJSON("/home/michael/go/src/projects.json")
 	var agentEmails []string
 	var agentNumbers []string
 	var projectId string
 	var supportEmail string
 	for _, e := range events {
-
 		//Figure out the project id and the agents associated with the project.
 		if e.Parent != 0 {
 			for _, p := range supportProjects.Projects {

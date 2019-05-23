@@ -47,18 +47,14 @@ Deployment
 ---
 It's currently running on a Linux AMI machine as a service.  
 This setup will be different based on what kind of machine you're running.  
-If you can get sudo access to the server where it's hosted you can `service lampros-support stop` or `service lampros-support start` or `service lampros-support restart`  
+If you can get sudo access to the server (currently, Troy's digissance server) where it's hosted you can `service lampros-support stop` or `service lampros-support start` or `service lampros-support restart`  
 The binary file is uploaded to `/home/michael/go/src/` you must stop the service to upload and then start again.  
 Log can be found: `/var/log/lampros-support.log`  
 
 Usage
----
+===
 You should not immediately respond to the initial email.  Wait until you get the software support notification and take the link to the Asana task and leave a comment there to respond.  Now everyone will be on the email list.  
 contact@lamproslabs.com and the support email address should not get Asana notifications.  
 Not all the support agents need to be added to the support group.  Troy gets emails from contact@lamproslabs.com anyway.  
-POST to the /add-agent endpoint to add an email and phone number.  
-Send json body like:  
-`{"email": "email@address.com", "phone": "+1234567890"}`  
-and set a header called: `Api-Key` using the OurApiKey in constants.go  
-This is just in memory, so if you stop and start the service you'll have to add agents again, so just save a request in postman.
-
+Simply, modify the projects.json file and upload to the digissance.com server under `/home/michael/go/src`  
+The email should be the support group email and the id is the Asana project id, found in the URL of any project.  I think it's clear what to do with the agents portion.  
