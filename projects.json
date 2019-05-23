@@ -5,7 +5,8 @@
             "id": 851918708024767,
             "agents" : [
                 {"email": "michael@lamproslabs.com", "phone": "+18592402898"},
-                {"email": "troy@lamproslabs.com", "phone": "+15132366510"}
+                {"email": "troy@lamproslabs.com", "phone": "+15132366510"},
+                {"email": "samee@lamproslabs.com", "phone": "+011923323067175"}
             ]
         },
         {
@@ -13,7 +14,8 @@
             "id": 1124184373168254,
             "agents" : [
                 {"email": "michael@lamproslabs.com", "phone": "+18592402898"},
-                {"email": "troy@lamproslabs.com", "phone": "+15132366510"}
+                {"email": "troy@lamproslabs.com", "phone": "+15132366510"},
+                {"email": "samee@lamproslabs.com", "phone": "+011923323067175"}
             ]
         }
     ]
