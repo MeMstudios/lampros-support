@@ -58,3 +58,10 @@ contact@lamproslabs.com and the support email address should not get Asana notif
 Not all the support agents need to be added to the support group.  Troy gets emails from contact@lamproslabs.com anyway.  
 Simply, modify the projects.json file and upload to the digissance.com server under `/home/michael/go/src`  
 The email should be the support group email and the id is the Asana project id, found in the URL of any project.  I think it's clear what to do with the agents portion.  
+
+Notes
+---
+At this time it does not check for if a COMMENT was added by a customer that could indicate the task is urgent.  
+The urgent tag will only be set automatically if someone emails to the support email with a subject or body containing any form of the word 'urgent'  
+However, the urgent response texts/emails will start to get sent if the urgent tag is set manually.  
+
