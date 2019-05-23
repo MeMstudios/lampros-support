@@ -55,7 +55,7 @@ Usage
 ===
 You should not immediately respond to the initial email.  Wait until you get the software support notification and take the link to the Asana task and leave a comment there to respond.  Now everyone will be on the email list.  
 contact@lamproslabs.com and the support email address should not get Asana notifications.  
-Not all the support agents need to be added to the support group.  Troy gets emails from contact@lamproslabs.com anyway.  
+Not all the support agents need to be added to the gmail support group.  Troy gets emails from contact@lamproslabs.com anyway.  Agents will get emails and texts if you add them to the projects.json file.  
 Simply, modify the projects.json file and upload to the digissance.com server under `/home/michael/go/src`  
 The email should be the support group email and the id is the Asana project id, found in the URL of any project.  I think it's clear what to do with the agents portion.  
 
