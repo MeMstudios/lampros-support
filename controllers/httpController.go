@@ -250,19 +250,21 @@ func handleEvent(e Event, recips []string, toNumbers []string, supportProjectID 
 				sender := GetSender(e.Id)
 				senderDomain := strings.Split(sender, "@")
 				senderArr := []string{sender} //Needed for SendEmail
-				if !CheckProjectEmail(sender, supportProjectID) && !IsAsanaDomain(senderDomain[1]) {
-					SendEmail("Please add the new user email: "+sender+" to the support project: https://app.asana.com/0/"+supportProjectID+"\nThen add them to the request: https://app.asana.com/0/"+supportProjectID+"/"+taskId, "New User Detected for Support.", recips)
-					SendEmail("Thank you for your for your request to Lampros Support. \nWe do not recognize your email.  You will need to be added to Asana to recieve support notifications. \nWe will confirm your email and add you to your support project. \nWe will contact you directly if we need more information. \n\n Thank you, \n\n -Lampros Labs Team \n", "New Software Support Request", senderArr)
-				} else {
-					fmt.Println("Follower found: " + sender)
-					if subject == task.Name {
-						fmt.Println("Trying to add to task")
-						UpdateTaskFollowers(sender, task.Gid)
+				if !IsAsanaDomain(senderDomain[1]) {
+					if !CheckProjectEmail(sender, supportProjectID) {
+						SendEmail("Please add the new user email: "+sender+" to the support project: https://app.asana.com/0/"+supportProjectID+"\nThen add them to the request: https://app.asana.com/0/"+supportProjectID+"/"+taskId, "New User Detected for Support.", recips)
+						SendEmail("Thank you for your for your request to Lampros Support. \nWe do not recognize your email.  You will need to be added to Asana to recieve support notifications. \nWe will confirm your email and add you to your support project. \nWe will contact you directly if we need more information. \n\n Thank you, \n\n -Lampros Labs Team \n", "New Software Support Request", senderArr)
+					} else {
+						fmt.Println("Follower found: " + sender)
+						if subject == task.Name {
+							fmt.Println("Trying to add to task")
+							UpdateTaskFollowers(sender, task.Gid)
+						}
 					}
+					SendEmail("You have a new support ticket please leave a comment on the asana ticket to respond and/or assign the task to yourself: https://app.asana.com/0/"+supportProjectID+"/"+taskId, "New Software Support Ticket: "+task.Name, recips)
 				}
 				ReadMessage("me", e.Id)
 			}
-			SendEmail("You have a new support ticket please leave a comment on the asana ticket to respond and/or assign the task to yourself: https://app.asana.com/0/"+supportProjectID+"/"+taskId, "New Software Support Ticket: "+task.Name, recips)
 			UpdateTaskTags(task)
 		}
 	case "story":
