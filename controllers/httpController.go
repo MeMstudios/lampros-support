@@ -246,23 +246,6 @@ func handleEvent(e Event, recips []string, toNumbers []string, supportProjectID 
 			task := GetTask(taskId)
 			emails := GetMessages("me", supportEmail)
 			for _, e := range emails {
-				subject := GetSubject(e.Id)
-				sender := GetSender(e.Id)
-				senderDomain := strings.Split(sender, "@")
-				senderArr := []string{sender} //Needed for SendEmail
-				if !IsAsanaDomain(senderDomain[1]) {
-					if !CheckProjectEmail(sender, supportProjectID) {
-						SendEmail("Please add the new user email: "+sender+" to the support project: https://app.asana.com/0/"+supportProjectID+"\nThen add them to the request: https://app.asana.com/0/"+supportProjectID+"/"+taskId, "New User Detected for Support.", recips)
-						SendEmail("Thank you for your for your request to Lampros Support. \nWe do not recognize your email.  You will need to be added to Asana to recieve support notifications. \nWe will confirm your email and add you to your support project. \nWe will contact you directly if we need more information. \n\n Thank you, \n\n -Lampros Labs Team \n", "New Software Support Request", senderArr)
-					} else {
-						fmt.Println("Follower found: " + sender)
-						if subject == task.Name {
-							fmt.Println("Trying to add to task")
-							UpdateTaskFollowers(sender, task.Gid)
-						}
-					}
-					SendEmail("You have a new support ticket please leave a comment on the asana ticket to respond and/or assign the task to yourself: https://app.asana.com/0/"+supportProjectID+"/"+taskId, "New Software Support Ticket: "+task.Name, recips)
-				}
 				ReadMessage("me", e.Id)
 			}
 			UpdateTaskTags(task)
@@ -281,7 +264,7 @@ func handleEvent(e Event, recips []string, toNumbers []string, supportProjectID 
 					go func() {
 						for t := range bigTimer.Ticker.C {
 							for _, n := range toNumbers {
-								SendTwilioMessage(n, "You have an urgent support ticket that hasn't been responded to.  Please check your email and respond! https://app.asana.com/0/"+supportProjectID+"/"+taskId)
+								SendTwilioMessage(n, "You have an urgent support ticket that hasn't been responded to.  Please respond to the Kayako support ticket. Then leave a comment on the task in Asana to stop the text notifications! https://app.asana.com/0/"+supportProjectID+"/"+taskId)
 								fmt.Println("Sent semi-urgent text at:", t)
 							}
 						}
@@ -298,7 +281,7 @@ func handleEvent(e Event, recips []string, toNumbers []string, supportProjectID 
 						go func() {
 							for t := range timer.Ticker.C {
 								for _, n := range toNumbers {
-									SendTwilioMessage(n, "You have an urgent support ticket that hasn't been responded to.  PLEASE RESPOND OR YOU WILL BE FINED! https://app.asana.com/0/"+supportProjectID+"/"+taskId)
+									SendTwilioMessage(n, "You have an urgent support ticket that hasn't been responded to.  PLEASE RESPOND OR YOU WILL BE FINED! If you have already responded to the Kayako ticket, please leave a comment on the Asana task to stop the texts: https://app.asana.com/0/"+supportProjectID+"/"+taskId)
 									fmt.Println("Sent urgent text at:", t)
 								}
 							}
@@ -312,7 +295,7 @@ func handleEvent(e Event, recips []string, toNumbers []string, supportProjectID 
 						}()
 					}()
 					fmt.Println("Urgent Tag Added.")
-					SendEmail("You have a new urgent ticket please respond immediately: https://app.asana.com/0/"+supportProjectID+"/"+taskId, "URGENT REQUEST PLEASE RESPOND", recips)
+					SendEmail("You have a new urgent ticket please respond to the client via the orginal/Kayako email immediately.  Then leave a comment on the task in Asana to stop the urgent notifications: https://app.asana.com/0/"+supportProjectID+"/"+taskId, "URGENT REQUEST PLEASE RESPOND", recips)
 				}
 				if story.StoryType == "comment_added" {
 					fmt.Println("Comment Added")
