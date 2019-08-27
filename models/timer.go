@@ -3,8 +3,8 @@ package models
 import "time"
 
 type TickerTimer struct {
-	Gid    int
-	TaskId int
+	Gid    string
+	TaskId string
 	Timer  *time.Timer
 	Ticker *time.Ticker
 }

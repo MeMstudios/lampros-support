@@ -7,7 +7,7 @@ type SupportAgent struct {
 
 type SupportProject struct {
 	SupportEmail string         `json:"email"`
-	ProjectId    int            `json:"id"`
+	ProjectId    string         `json:"id"`
 	Agents       []SupportAgent `json:"agents"`
 }
 

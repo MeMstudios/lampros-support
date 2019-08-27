@@ -62,12 +62,12 @@ type Webhook struct {
 }
 
 type Event struct {
-	Action   string `json:"action"`
-	Created  string `json:"created_at"`
-	Parent   int    `json:"parent"`
-	Resource int    `json:"resource"`
-	Type     string `json:"type"`
-	UserId   int    `json:"user"`
+	Action   string   `json:"action"`
+	Created  string   `json:"created_at"`
+	Parent   Resource `json:"parent"`
+	Resource Resource `json:"resource"`
+	Type     string   `json:"type"`
+	User     Resource `json:"user"`
 }
 
 type Story struct {

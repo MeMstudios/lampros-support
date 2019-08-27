@@ -8,8 +8,8 @@ Create a filter in the contact@lamproslabs.com account to forward emails to the 
 The support email must be setup as a user in Asana and *TURN OFF EMAIL NOTIFICATIONS* or you will start an infinite email loop!  
 Client email addresses should be added to the Asana project.  
 
-If are in the gmail support group, you should not immediately respond to the initial email.  Wait until you get the software support notification and take the link to the Asana task and leave a comment there to respond.  Now everyone will be on the email list.  
-contact@lamproslabs.com and the support email addresses should not get Asana notifications.  
+If you are in the gmail support group, you should not immediately respond to the initial email.  Wait until you get the software support notification and take the link to the Asana task and leave a comment there to respond.  Now everyone will be on the email list.  
+contact@lamproslabs.com and the support email addresses should not get Asana notifications.  Turn them off in Asana.  
 Not all the support agents need to be added to the gmail support group.  Troy gets emails from contact@lamproslabs.com anyway.  Agents will get emails and texts if you add them to the projects.json file.  
 
 Add Support Agents
@@ -58,9 +58,8 @@ where `EmailAddress` and `Password` are for an email account that will send mail
 
 Constants
 ---
-When `Environment` is set to `prod` the app will "release the hounds securely" (starting up with SSL).  
-This requires you to have the fullchain.pem and privkey.pem in the same folder, or update the code in httpController to have the full path to those files.  
-The AsanaSupportId will have to be changed if the support project is changed.  
+When `Environment` is set to `prod` the app will "release the hounds securely" (starting up with SSL). Set it to anything else for local development.  
+Prod mode requires you to have the fullchain.pem and privkey.pem in the same folder, or update the code in httpController to have the full path to those files.  
 Also contains the twilio number from the twilio account used to send texts.
 
 Deployment

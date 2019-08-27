@@ -1,3 +1,8 @@
+/*
+Package containing the controllers for each API implementation (Asana, Twilio, and Gmail).
+This file is the HTTP controller for our REST API containing most of the business logic.
+You will need a credentials.go file (API credentials) in this package described in the README.
+*/
 package controllers
 
 import (
@@ -15,10 +20,6 @@ import (
 
 	"github.com/gorilla/mux"
 )
-
-// var agents *Agents
-// var recips []string
-// var toNumbers []string
 
 //Make my timers array which should be accessible by this file
 var timers []TickerTimer
@@ -108,11 +109,11 @@ func postTwilioRequest(params map[string]string, request string) []byte {
 
 func TestEndpoint(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
-	fuck := []byte("Fuck")
+	test := []byte("Test")
 	w.Header().Set("X-Hook-Secret", "12301985bugaloo120198")
 	w.WriteHeader(http.StatusOK)
-	w.Write(fuck)
-	fmt.Println("Fuck")
+	w.Write(test)
+	fmt.Println("Test")
 }
 
 //Not using right now
@@ -148,19 +149,11 @@ func WebhookEndpoint(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 	fmt.Println("///////////////////////Recieved Webhook//////////////////")
 	var event WebhookEvent
-	//TODO: figure out HMAC decode
-	// hookSecret := r.Header.Get("X-Hook-Signature")
-	// if !checkMAC("message", hookSecret) {
-	// 	fmt.Println("Hoook secret: " + hookSecret)
-	// 	fmt.Println("Sent secret doesn't match the saved one.  GTFO! " + hookSecret)
-	// 	w.Header().Set("X-Hook-Secret", "FUCKYOU")
-	// 	w.WriteHeader(http.StatusForbidden)
-	// 	w.Write(emptyResponse)
-	// 	return
-	// }
+	debug := formatRequest(r)
 	if err := json.NewDecoder(r.Body).Decode(&event); err != nil {
 		respondWithError(w, http.StatusBadRequest, "Invalid request payload")
 		fmt.Printf("invalid request payload: %v\n", err)
+		fmt.Println(debug)
 		return
 	}
 	events := event.Events
@@ -172,7 +165,7 @@ func WebhookEndpoint(w http.ResponseWriter, r *http.Request) {
 	if len(events) == 0 {
 		//IF initiating webhook, stop here and send back the x-hook-secret
 		hookSecret := r.Header.Get("X-Hook-Secret")
-		if hookSecret != "" { //hopefully enough to stop the HAXXXORZ
+		if hookSecret != "" { //Checking for the correct headers
 			fmt.Println("Creating Webhook!")
 			w.Header().Set("X-Hook-Secret", hookSecret)
 			w.WriteHeader(http.StatusOK)
@@ -194,10 +187,10 @@ func WebhookEndpoint(w http.ResponseWriter, r *http.Request) {
 	var supportEmail string
 	for _, e := range events {
 		//Figure out the project id and the agents associated with the project.
-		if e.Parent != 0 {
+		if e.Parent.Gid != "" {
 			for _, p := range supportProjects.Projects {
-				if e.Parent == p.ProjectId {
-					projectId = strconv.Itoa(e.Parent)
+				if e.Parent.Gid == p.ProjectId {
+					projectId = e.Parent.Gid
 					supportEmail = p.SupportEmail
 					for _, a := range p.Agents {
 						agentEmails = append(agentEmails, a.Email)
@@ -207,13 +200,12 @@ func WebhookEndpoint(w http.ResponseWriter, r *http.Request) {
 			}
 			if projectId == "" {
 				//If the projectId wasn't found it should be a story added so the parent will be the task Id
-				taskId := strconv.Itoa(e.Parent)
-				task := GetTask(taskId)
+				task := GetTask(e.Parent.Gid)
 				for _, p := range supportProjects.Projects {
 					//Loop through the task's projects to compare with ours
 					for _, proj := range task.Projects {
-						if proj.Id == p.ProjectId {
-							projectId = strconv.Itoa(e.Parent)
+						if proj.Gid == p.ProjectId {
+							projectId = e.Parent.Gid
 							supportEmail = p.SupportEmail
 							for _, a := range p.Agents {
 								agentEmails = append(agentEmails, a.Email)
@@ -223,7 +215,7 @@ func WebhookEndpoint(w http.ResponseWriter, r *http.Request) {
 					}
 				}
 			}
-			//start a goroutine to hand all the events individually.
+			//start a goroutine to handle all the events individually.
 			go handleEvent(e, agentEmails, agentNumbers, projectId, supportEmail)
 		}
 	}
@@ -236,13 +228,13 @@ func handleEvent(e Event, recips []string, toNumbers []string, supportProjectID 
 	fmt.Println("Type: " + e.Type)
 	fmt.Println("Action: " + e.Action)
 	fmt.Println("Created at: " + e.Created)
-	fmt.Printf("Parent: %d\n", e.Parent)
-	fmt.Printf("ID: %d\n", e.Resource)
+	fmt.Println("Parent: " + e.Parent.Gid)
+	fmt.Println("ID: " + e.Resource.Gid)
 	switch e.Type {
 	case "task":
-		parentGID := strconv.Itoa(e.Parent)
+		parentGID := e.Parent.Gid
 		if e.Action == "added" && parentGID == supportProjectID {
-			taskId := strconv.Itoa(e.Resource)
+			taskId := e.Resource.Gid
 			task := GetTask(taskId)
 			emails := GetMessages("me", supportEmail)
 			for _, e := range emails {
@@ -268,14 +260,14 @@ func handleEvent(e Event, recips []string, toNumbers []string, supportProjectID 
 			UpdateTaskTags(task)
 		}
 	case "story":
-		if e.Action == "added" && e.Parent != 0 {
-			taskId := strconv.Itoa(e.Parent)
-			storyId := strconv.Itoa(e.Resource)
+		if e.Action == "added" && e.Parent.Gid != "" {
+			taskId := e.Parent.Gid
+			storyId := e.Resource.Gid
 			story := GetStory(storyId)
 			if TaskIsUrgent(taskId) {
 				fmt.Println("URGENT TASK DETECTED")
 				if story.StoryType == "added_to_tag" {
-					bigTimer := StartUrgentTimer(e.Resource, e.Parent, 1)
+					bigTimer := StartUrgentTimer(storyId, taskId, 1)
 					//Add the timer to the timer array using the task id as key.
 					timers = append(timers, bigTimer)
 					go func() {
@@ -292,7 +284,7 @@ func handleEvent(e Event, recips []string, toNumbers []string, supportProjectID 
 						fmt.Println("big ticker stopped.")
 						timers = DeleteFromTimers(timers, bigTimer)
 						fmt.Println("big timer deleted.")
-						timer := StartUrgentTimer(e.Resource, e.Parent, 2)
+						timer := StartUrgentTimer(storyId, taskId, 2)
 						timers = append(timers, timer)
 						fmt.Println("Started short timer.")
 						go func() {
@@ -323,7 +315,7 @@ func handleEvent(e Event, recips []string, toNumbers []string, supportProjectID 
 						//STOP THE TIMERS by finding them in the array with the task id key.
 						for i, t := range timers {
 							fmt.Println("Timer ", i)
-							if t.TaskId == e.Parent {
+							if t.TaskId == taskId {
 								fmt.Println("Stopping timers")
 								StopTimer(t)
 								timers = DeleteFromTimers(timers, t)
@@ -345,6 +337,36 @@ func handleEvent(e Event, recips []string, toNumbers []string, supportProjectID 
 // 	fmt.Printf("%x\n", []byte(sentMAC))
 // 	return hmac.Equal([]byte(sentMAC), expectedMAC)
 // }
+
+// formatRequest generates ascii representation of a request
+func formatRequest(r *http.Request) string {
+	// Create return string
+	var request []string
+	// Add the request string
+	url := fmt.Sprintf("%v %v %v", r.Method, r.URL, r.Proto)
+	request = append(request, url)
+	// Add the host
+	request = append(request, fmt.Sprintf("Host: %v", r.Host))
+	// Loop through headers
+	for name, headers := range r.Header {
+		name = strings.ToLower(name)
+		for _, h := range headers {
+			request = append(request, fmt.Sprintf("%v: %v", name, h))
+		}
+	}
+
+	// If this is a POST, add post data
+	if r.Method == "POST" {
+		buf, bodyErr := ioutil.ReadAll(r.Body)
+		if bodyErr != nil {
+			return fmt.Sprintf("Body Error: %v", bodyErr.Error())
+		}
+		request = append(request, "\n")
+		request = append(request, fmt.Sprintf("BODY: %q", buf))
+	}
+	// Return the request as a string
+	return strings.Join(request, "\n")
+}
 
 func readProjectsJSON(file string) *Projects {
 	f, err := os.Open(file)
@@ -391,7 +413,7 @@ func StartRouter() {
 
 	//Endpoints
 	r.HandleFunc("/receive-webhook/13r98iof2jejqeg309ihe4oq9ug3029givje", WebhookEndpoint).Methods("POST")
-	//r.HandleFunc("/test", TestEndpoint).Methods("GET")
+	r.HandleFunc("/test", TestEndpoint).Methods("GET")
 	//r.HandleFunc("/add-agent", AddAgentEndpoint).Methods("POST")
 
 	if Environment == "prod" {

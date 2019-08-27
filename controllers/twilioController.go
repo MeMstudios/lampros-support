@@ -29,7 +29,7 @@ func SendTwilioMessage(toNumber, message string) TwilioMessageResponse {
 //the company will provide a response within 1 hour during normal business hours as defined above,
 //3 hours if the report is made outside of normal business hours,
 //and 6 hours if during the holiday.
-func StartUrgentTimer(gid, taskId, urgency int) TickerTimer {
+func StartUrgentTimer(gid, taskId string, urgency int) TickerTimer {
 	var timer *time.Timer
 	var ticker *time.Ticker
 	loc, err := time.LoadLocation("America/New_York")
