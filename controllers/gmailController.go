@@ -71,7 +71,7 @@ func saveToken(path string, token *oauth2.Token) {
 	json.NewEncoder(f).Encode(token)
 }
 
-func StartGmailClient() *gmail.Service {
+func startGmailClient() *gmail.Service {
 	b, err := ioutil.ReadFile("/home/michael/go/src/credentials.json")
 	if err != nil {
 		log.Fatalf("Unable to read client secret file: %v", err)
@@ -91,8 +91,8 @@ func StartGmailClient() *gmail.Service {
 	return srv
 }
 
-func GetSender(id string) string {
-	api := StartGmailClient()
+func getSender(id string) string {
+	api := startGmailClient()
 	user := "me"
 	meta, err := api.Users.Messages.Get(user, id).Format("metadata").Do()
 	if err != nil {
@@ -111,8 +111,8 @@ func GetSender(id string) string {
 }
 
 // returns all the unread messages in the users inbox sent to a certain email address
-func GetMessages(user string, supportEmailAddress string) []*gmail.Message {
-	api := StartGmailClient()
+func getMessages(user string, supportEmailAddress string) []*gmail.Message {
+	api := startGmailClient()
 	mesList, err := api.Users.Messages.List(user).Q("to:" + supportEmailAddress + " is:unread").Do()
 	if err != nil {
 		log.Fatalf("Failed to get messages: %v", err)
@@ -124,8 +124,8 @@ func GetMessages(user string, supportEmailAddress string) []*gmail.Message {
 }
 
 // removes a message from the "unread" list in gmail by id
-func ReadMessage(user string, id string) {
-	api := StartGmailClient()
+func readMessage(user string, id string) {
+	api := startGmailClient()
 	var req gmail.ModifyMessageRequest
 	req.RemoveLabelIds = append(req.AddLabelIds, "UNREAD")
 	res, err := api.Users.Messages.Modify(user, id, &req).Do()
@@ -136,8 +136,8 @@ func ReadMessage(user string, id string) {
 	}
 }
 
-func GetSubject(id string) string {
-	api := StartGmailClient()
+func getSubject(id string) string {
+	api := startGmailClient()
 	user := "me"
 	meta, err := api.Users.Messages.Get(user, id).Format("metadata").Do()
 	if err != nil {
@@ -152,7 +152,7 @@ func GetSubject(id string) string {
 	return subj
 }
 
-func SendEmail(body, subj string, recip []string) bool {
+func sendEmail(body, subj string, recip []string) bool {
 	auth := smtp.PlainAuth("", EmailAddress, Password, "smtp.gmail.com")
 
 	// Connect to the server, authenticate, set the sender and recipient,

@@ -8,7 +8,7 @@ import (
 	"time"
 )
 
-func SendTwilioMessage(toNumber, message string) TwilioMessageResponse {
+func sendTwilioMessage(toNumber, message string) TwilioMessageResponse {
 	params := make(map[string]string)
 	params["To"] = toNumber
 	params["From"] = TwilioNumber
@@ -29,7 +29,7 @@ func SendTwilioMessage(toNumber, message string) TwilioMessageResponse {
 //the company will provide a response within 1 hour during normal business hours as defined above,
 //3 hours if the report is made outside of normal business hours,
 //and 6 hours if during the holiday.
-func StartUrgentTimer(gid, taskId string, urgency int) TickerTimer {
+func startUrgentTimer(gid, taskId string, urgency int) TickerTimer {
 	var timer *time.Timer
 	var ticker *time.Ticker
 	loc, err := time.LoadLocation("America/New_York")
@@ -64,7 +64,7 @@ func StartUrgentTimer(gid, taskId string, urgency int) TickerTimer {
 	return channelTimer
 }
 
-func StopTimer(timer TickerTimer) {
+func stopTimer(timer TickerTimer) {
 	stopTime := timer.Timer.Stop()
 	timer.Ticker.Stop()
 	fmt.Println("Stop Tick and Time")
@@ -75,7 +75,7 @@ func StopTimer(timer TickerTimer) {
 	return
 }
 
-func DeleteFromTimers(timers []TickerTimer, timer TickerTimer) []TickerTimer {
+func deleteFromTimers(timers []TickerTimer, timer TickerTimer) []TickerTimer {
 	if len(timers) > 1 {
 		for i, t := range timers {
 			if timer.Gid == t.Gid {

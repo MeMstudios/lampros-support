@@ -201,7 +201,11 @@ func WebhookEndpoint(w http.ResponseWriter, r *http.Request) {
 			}
 			if projectId == "" {
 				//If the projectId wasn't found it should be a story added so the parent will be the task Id
-				task := GetTask(e.Parent.Gid)
+				task, err := getTask(e.Parent.Gid)
+				if err != nil {
+					fmt.Println(err)
+					return
+				}
 				for _, p := range supportProjects.Projects {
 					//Loop through the task's projects to compare with ours
 					for _, proj := range task.Projects {
@@ -217,7 +221,7 @@ func WebhookEndpoint(w http.ResponseWriter, r *http.Request) {
 				}
 			}
 			if projectId != "" {
-				//start a goroutine to handle all the events individually.
+				//if we found a project id start a goroutine to handle all the events individually.
 				go handleEvent(e, agentEmails, agentNumbers, projectId, supportEmail)
 			}
 		}
@@ -240,28 +244,41 @@ func handleEvent(e Event, recips []string, toNumbers []string, supportProjectID 
 		parentGID := e.Parent.Gid
 		if e.Action == "added" && parentGID == supportProjectID {
 			taskId := e.Resource.Gid
-			task := GetTask(taskId)
-			emails := GetMessages("me", supportEmail)
-			for _, e := range emails {
-				ReadMessage("me", e.Id)
+			task, err := getTask(taskId)
+			if err != nil {
+				fmt.Println(err)
+				return
 			}
-			UpdateTaskTags(task)
+			emails := getMessages("me", supportEmail)
+			for _, e := range emails {
+				readMessage("me", e.Id)
+			}
+			updateTaskTags(task)
 		}
 	case "story":
 		if e.Action == "added" && e.Parent.Gid != "" {
 			taskId := e.Parent.Gid
 			storyId := e.Resource.Gid
-			story := GetStory(storyId)
-			if TaskIsUrgent(taskId) {
+			story, err := getStory(storyId)
+			if err != nil {
+				fmt.Println(err)
+				return
+			}
+			urgent, err := taskIsUrgent(taskId)
+			if err != nil {
+				fmt.Println(err)
+				return
+			}
+			if urgent {
 				fmt.Println("URGENT TASK DETECTED")
 				if story.StoryType == "added_to_tag" {
-					bigTimer := StartUrgentTimer(storyId, taskId, 1)
+					bigTimer := startUrgentTimer(storyId, taskId, 1)
 					//Add the timer to the timer array using the task id as key.
 					timers = append(timers, bigTimer)
 					go func() {
 						for t := range bigTimer.Ticker.C {
 							for _, n := range toNumbers {
-								SendTwilioMessage(n, "You have an urgent support ticket that hasn't been responded to.  \n"+
+								sendTwilioMessage(n, "You have an urgent support ticket that hasn't been responded to.  \n"+
 									"Please reply to the original email. Then leave a comment on the task in Asana to stop the text notifications! "+
 									"https://app.asana.com/0/"+supportProjectID+"/"+taskId)
 								fmt.Println("Sent semi-urgent text at:", t)
@@ -272,15 +289,15 @@ func handleEvent(e Event, recips []string, toNumbers []string, supportProjectID 
 						<-bigTimer.Timer.C
 						bigTimer.Ticker.Stop()
 						fmt.Println("big ticker stopped.")
-						timers = DeleteFromTimers(timers, bigTimer)
+						timers = deleteFromTimers(timers, bigTimer)
 						fmt.Println("big timer deleted.")
-						timer := StartUrgentTimer(storyId, taskId, 2)
+						timer := startUrgentTimer(storyId, taskId, 2)
 						timers = append(timers, timer)
 						fmt.Println("Started short timer.")
 						go func() {
 							for t := range timer.Ticker.C {
 								for _, n := range toNumbers {
-									SendTwilioMessage(n, "You have an urgent support ticket that hasn't been responded to.  \n"+
+									sendTwilioMessage(n, "You have an urgent support ticket that hasn't been responded to.  \n"+
 										"PLEASE RESPOND OR YOU WILL BE FINED! \n"+
 										"If you have already responded to the email ticket, please leave a comment on the Asana task to stop the texts: "+
 										"https://app.asana.com/0/"+supportProjectID+"/"+taskId)
@@ -292,12 +309,12 @@ func handleEvent(e Event, recips []string, toNumbers []string, supportProjectID 
 							<-timer.Timer.C
 							timer.Ticker.Stop()
 							fmt.Println("Short ticker stopped")
-							timers = DeleteFromTimers(timers, timer)
+							timers = deleteFromTimers(timers, timer)
 							fmt.Println("Short timer deleted")
 						}()
 					}()
 					fmt.Println("Urgent Tag Added.")
-					SendEmail("You have a new urgent ticket.  Please respond to the client via the orginal email immediately.  \n\n"+
+					sendEmail("You have a new urgent ticket.  Please respond to the client via the orginal email immediately.  \n\n"+
 						"Please remove the software support email from the recipient list and cc important parties.  \n\n"+
 						"Then leave a comment on the task in Asana to stop the urgent notifications: "+
 						"https://app.asana.com/0/"+supportProjectID+"/"+taskId,
@@ -305,7 +322,11 @@ func handleEvent(e Event, recips []string, toNumbers []string, supportProjectID 
 				}
 				if story.StoryType == "comment_added" {
 					fmt.Println("Comment Added")
-					commenter := GetUser(story.CreatedBy.Gid)
+					commenter, err := getUser(story.CreatedBy.Gid)
+					if err != nil {
+						fmt.Println(err)
+						return
+					}
 					commenterEmailParts := strings.Split(commenter.Email, "@")
 					commenterEmailDomain := commenterEmailParts[1]
 					if commenterEmailDomain == "lamproslabs.com" {
@@ -314,12 +335,13 @@ func handleEvent(e Event, recips []string, toNumbers []string, supportProjectID 
 							fmt.Println("Timer ", i)
 							if t.TaskId == taskId {
 								fmt.Println("Stopping timers")
-								StopTimer(t)
-								timers = DeleteFromTimers(timers, t)
+								stopTimer(t)
+								timers = deleteFromTimers(timers, t)
 							}
 						}
 						fmt.Println("Comment made by support team.")
 					}
+
 				}
 			}
 		}
