@@ -1,5 +1,6 @@
 /*
 Package containing the controllers for each API implementation (Asana, Twilio, and Gmail).
+Twilio controller has the ticker/timer code for timing the texts.
 This file is the HTTP controller for our REST API containing most of the business logic.
 You will need a credentials.go file (API credentials) in this package described in the README.
 */
@@ -47,7 +48,7 @@ func getAsanaResponse(request string) []byte {
 
 }
 
-//POST Request with a map of parameters.
+//POST Request with a map of parameters
 //returns the response as byte array
 func postAsanaRequest(params map[string]string, request string) []byte {
 	data := url.Values{}
@@ -78,7 +79,7 @@ func postAsanaRequest(params map[string]string, request string) []byte {
 	return responseData
 }
 
-//POST Request for twilio.
+//POST Request for twilio
 //returns the response as byte array
 func postTwilioRequest(params map[string]string, request string) []byte {
 	data := url.Values{}
@@ -149,11 +150,11 @@ func WebhookEndpoint(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 	fmt.Println("///////////////////////Recieved Webhook//////////////////")
 	var event WebhookEvent
-	debug := formatRequest(r)
+	//debug := formatRequest(r)
 	if err := json.NewDecoder(r.Body).Decode(&event); err != nil {
 		respondWithError(w, http.StatusBadRequest, "Invalid request payload")
 		fmt.Printf("invalid request payload: %v\n", err)
-		fmt.Println(debug)
+		//fmt.Println(debug)
 		return
 	}
 	events := event.Events
@@ -215,8 +216,10 @@ func WebhookEndpoint(w http.ResponseWriter, r *http.Request) {
 					}
 				}
 			}
-			//start a goroutine to handle all the events individually.
-			go handleEvent(e, agentEmails, agentNumbers, projectId, supportEmail)
+			if projectId != "" {
+				//start a goroutine to handle all the events individually.
+				go handleEvent(e, agentEmails, agentNumbers, projectId, supportEmail)
+			}
 		}
 	}
 	fmt.Println("///////////////////////Completed Webhook//////////////////")
@@ -224,13 +227,15 @@ func WebhookEndpoint(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte("thanks"))
 }
 
+//Function called as a goroutine whenever we get a valid webhook payload
 func handleEvent(e Event, recips []string, toNumbers []string, supportProjectID string, supportEmail string) {
-	fmt.Println("Type: " + e.Type)
+	var eventType = e.Resource.ResourceType
+	fmt.Println("Type: " + eventType)
 	fmt.Println("Action: " + e.Action)
 	fmt.Println("Created at: " + e.Created)
 	fmt.Println("Parent: " + e.Parent.Gid)
 	fmt.Println("ID: " + e.Resource.Gid)
-	switch e.Type {
+	switch eventType {
 	case "task":
 		parentGID := e.Parent.Gid
 		if e.Action == "added" && parentGID == supportProjectID {
@@ -312,45 +317,39 @@ func handleEvent(e Event, recips []string, toNumbers []string, supportProjectID 
 	}
 }
 
-// func checkMAC(message, sentMAC string) bool {
-// 	mac := hmac.New(sha256.New, []byte(SavedHookSecret))
-// 	mac.Write([]byte(message))
-// 	expectedMAC := mac.Sum(nil)
-// 	fmt.Printf("%x\n", expectedMAC)
-// 	fmt.Printf("%x\n", []byte(sentMAC))
-// 	return hmac.Equal([]byte(sentMAC), expectedMAC)
+// formatRequest generates ascii representation of a request
+// Used for debugging
+// func formatRequest(r *http.Request) string {
+// 	// Create return string
+// 	var request []string
+// 	// Add the request string
+// 	url := fmt.Sprintf("%v %v %v", r.Method, r.URL, r.Proto)
+// 	request = append(request, url)
+// 	// Add the host
+// 	request = append(request, fmt.Sprintf("Host: %v", r.Host))
+// 	// Loop through headers
+// 	for name, headers := range r.Header {
+// 		name = strings.ToLower(name)
+// 		for _, h := range headers {
+// 			request = append(request, fmt.Sprintf("%v: %v", name, h))
+// 		}
+// 	}
+
+// 	// If this is a POST, add post data
+// 	if r.Method == "POST" {
+// 		// Save a copy of this request for debugging.
+// 		requestDump, err := httputil.DumpRequest(r, true)
+// 		if err != nil {
+// 			fmt.Println(err)
+// 		}
+// 		request = append(request, "\n")
+// 		request = append(request, string(requestDump))
+// 	}
+// 	// Return the request as a string
+// 	return strings.Join(request, "\n")
 // }
 
-// formatRequest generates ascii representation of a request
-func formatRequest(r *http.Request) string {
-	// Create return string
-	var request []string
-	// Add the request string
-	url := fmt.Sprintf("%v %v %v", r.Method, r.URL, r.Proto)
-	request = append(request, url)
-	// Add the host
-	request = append(request, fmt.Sprintf("Host: %v", r.Host))
-	// Loop through headers
-	for name, headers := range r.Header {
-		name = strings.ToLower(name)
-		for _, h := range headers {
-			request = append(request, fmt.Sprintf("%v: %v", name, h))
-		}
-	}
-
-	// If this is a POST, add post data
-	if r.Method == "POST" {
-		buf, bodyErr := ioutil.ReadAll(r.Body)
-		if bodyErr != nil {
-			return fmt.Sprintf("Body Error: %v", bodyErr.Error())
-		}
-		request = append(request, "\n")
-		request = append(request, fmt.Sprintf("BODY: %q", buf))
-	}
-	// Return the request as a string
-	return strings.Join(request, "\n")
-}
-
+//Helper function to read the local projects file
 func readProjectsJSON(file string) *Projects {
 	f, err := os.Open(file)
 	if err != nil {

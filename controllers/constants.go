@@ -4,16 +4,13 @@ const Environment = "prod" //checks for prod, anything else starts a normal serv
 
 const AsanaBase = "https://app.asana.com/api/1.0"
 
-//const SupportProjectID = "851918708024767"
+//Asana Tag IDs
 const UrgentTagGid = "1107602815071859"
 const NewTagGid = "1107602815071860"
 const PendingTagGid = "1107602815071861"
 const ResolvedTagGid = "1107602815071862"
 
-//const SupportEmailAddress = "testsoftwaresupport@lamproslabs.com"
-
-const OurApiKey = "130r882j44iwjq0392ujt0293i192ur0193igj2npe9u2309tuj"
-
+//Twilio
 const TwilioNumber = "+15135862981"
 const TwiML = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
 	"<Response>\n" +
