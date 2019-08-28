@@ -16,8 +16,6 @@ import (
 	"google.golang.org/api/gmail/v1"
 )
 
-//Code from Google
-
 // Retrieve a token, saves the token, then returns the generated client.
 func getClient(config *oauth2.Config) *http.Client {
 	// The file token.json stores the user's access and refresh tokens, and is
@@ -112,6 +110,7 @@ func GetSender(id string) string {
 	return from
 }
 
+// returns all the unread messages in the users inbox sent to a certain email address
 func GetMessages(user string, supportEmailAddress string) []*gmail.Message {
 	api := StartGmailClient()
 	mesList, err := api.Users.Messages.List(user).Q("to:" + supportEmailAddress + " is:unread").Do()
@@ -124,10 +123,10 @@ func GetMessages(user string, supportEmailAddress string) []*gmail.Message {
 	return mesList.Messages
 }
 
+// removes a message from the "unread" list in gmail by id
 func ReadMessage(user string, id string) {
 	api := StartGmailClient()
 	var req gmail.ModifyMessageRequest
-	//req.AddLabelIds = append(req.AddLabelIds, "")
 	req.RemoveLabelIds = append(req.AddLabelIds, "UNREAD")
 	res, err := api.Users.Messages.Modify(user, id, &req).Do()
 	if err != nil {
@@ -157,8 +156,8 @@ func SendEmail(body, subj string, recip []string) bool {
 	auth := smtp.PlainAuth("", EmailAddress, Password, "smtp.gmail.com")
 
 	// Connect to the server, authenticate, set the sender and recipient,
-	// and send the email all in one step.
-	to := recip //WHY did I have appending the asana address?
+	// and send the email
+	to := recip
 	toHeader := "To: "
 	for _, r := range to {
 		toHeader += r + ","
