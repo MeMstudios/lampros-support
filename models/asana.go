@@ -66,7 +66,6 @@ type Event struct {
 	Created  string   `json:"created_at"`
 	Parent   Resource `json:"parent"`
 	Resource Resource `json:"resource"`
-	Type     string   `json:"type"`
 	User     Resource `json:"user"`
 }
 
