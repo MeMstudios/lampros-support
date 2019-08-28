@@ -64,6 +64,7 @@ func startUrgentTimer(gid, taskId string, urgency int) TickerTimer {
 	return channelTimer
 }
 
+//Stops a timer.  If it fails to stop we flush the channel in case there is still a thread
 func stopTimer(timer TickerTimer) {
 	stopTime := timer.Timer.Stop()
 	timer.Ticker.Stop()
@@ -75,6 +76,8 @@ func stopTimer(timer TickerTimer) {
 	return
 }
 
+//Accepts parameters TickerTimer array and TickerTimer to delete from the array.
+//Returns the modified array TickerTimers
 func deleteFromTimers(timers []TickerTimer, timer TickerTimer) []TickerTimer {
 	if len(timers) > 1 {
 		for i, t := range timers {
