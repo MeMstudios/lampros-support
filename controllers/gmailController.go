@@ -130,7 +130,7 @@ func readMessage(user string, id string) {
 	req.RemoveLabelIds = append(req.AddLabelIds, "UNREAD")
 	res, err := api.Users.Messages.Modify(user, id, &req).Do()
 	if err != nil {
-		fmt.Printf("response from Gmail: %v\n", err)
+		fmt.Printf("Error from Gmail: %v\n", err)
 	} else {
 		fmt.Println("Message read: " + res.Id)
 	}

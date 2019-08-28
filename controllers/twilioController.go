@@ -13,7 +13,7 @@ func sendTwilioMessage(toNumber, message string) TwilioMessageResponse {
 	params["To"] = toNumber
 	params["From"] = TwilioNumber
 	params["Body"] = message
-	respData := postTwilioRequest(params, parseUrl(TwilioBase+"/Messages.json"))
+	respData := postTwilioRequest(params, parseURL(TwilioBase+"/Messages.json"))
 	var resp TwilioMessageResponse
 	json.Unmarshal(respData, &resp)
 	if resp.ErrorCode > 0 {

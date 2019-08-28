@@ -4,7 +4,7 @@ const Environment = "prod" //checks for prod, anything else starts a normal serv
 
 const AsanaBase = "https://app.asana.com/api/1.0"
 
-//Asana Tag IDs
+//Asana Tag Ids
 const UrgentTagGid = "1107602815071859"
 const NewTagGid = "1107602815071860"
 const PendingTagGid = "1107602815071861"

@@ -11,8 +11,8 @@ import (
 )
 
 //Get task details from an asana project
-func getTasks(supportProjectID string) ([]Task, error) {
-	projectRespData := getAsanaResponse(parseUrl(AsanaBase + "/projects/" + supportProjectID + "/tasks"))
+func getTasks(supportProjectId string) ([]Task, error) {
+	projectRespData := getAsanaResponse(parseURL(AsanaBase + "/projects/" + supportProjectId + "/tasks"))
 
 	var projectResp Response
 	//unmarshal the data to the response object
@@ -38,7 +38,7 @@ func getTasks(supportProjectID string) ([]Task, error) {
 func getTask(taskId string) (Task, error) {
 	var resp TaskResponse
 	//Get the task response data
-	responseData := getAsanaResponse(parseUrl(AsanaBase + "/tasks/" + taskId))
+	responseData := getAsanaResponse(parseURL(AsanaBase + "/tasks/" + taskId))
 	//Make it an object
 	json.Unmarshal(responseData, &resp)
 	if len(resp.Errors) > 0 {
@@ -49,7 +49,7 @@ func getTask(taskId string) (Task, error) {
 
 func getStory(storyId string) (Story, error) {
 	var resp StoryResponse
-	responseData := getAsanaResponse(parseUrl(AsanaBase + "/stories/" + storyId))
+	responseData := getAsanaResponse(parseURL(AsanaBase + "/stories/" + storyId))
 	json.Unmarshal(responseData, &resp)
 	if len(resp.Errors) > 0 {
 		return resp.Story, errors.New(fmtApiErrors(resp.Errors))
@@ -60,7 +60,7 @@ func getStory(storyId string) (Story, error) {
 //Return the user object by the userId string
 func getUser(userId string) (User, error) {
 	var resp UserResponse
-	responseData := getAsanaResponse(parseUrl(AsanaBase + "/users/" + userId))
+	responseData := getAsanaResponse(parseURL(AsanaBase + "/users/" + userId))
 	json.Unmarshal(responseData, &resp)
 	if len(resp.Errors) > 0 {
 		return resp.User, errors.New(fmtApiErrors(resp.Errors))
@@ -71,7 +71,7 @@ func getUser(userId string) (User, error) {
 //Return the user object and error if we can't find the user
 func getUserByEmail(userEmail string) (User, error) {
 	var userResp UserResponse
-	userRespData := getAsanaResponse(parseUrl(AsanaBase + "/users/" + userEmail))
+	userRespData := getAsanaResponse(parseURL(AsanaBase + "/users/" + userEmail))
 	json.Unmarshal(userRespData, &userResp)
 	if len(userResp.Errors) > 0 {
 		return userResp.User, errors.New(fmtApiErrors(userResp.Errors))
@@ -79,6 +79,7 @@ func getUserByEmail(userEmail string) (User, error) {
 	return userResp.User, nil
 }
 
+//Updates a task to have the Urgent tag based on the Asana task description or title
 func updateTaskTags(task Task) error {
 	params := make(map[string]string)
 	params["tag"] = UrgentTagGid
@@ -91,7 +92,7 @@ func updateTaskTags(task Task) error {
 		caseInsensitiveContains(task.Name, "important") ||
 		caseInsensitiveContains(task.Notes, "important") {
 		//Add the urgent tag
-		respData := postAsanaRequest(params, parseUrl(AsanaBase+"/tasks/"+task.Gid+"/addTag"))
+		respData := postAsanaRequest(params, parseURL(AsanaBase+"/tasks/"+task.Gid+"/addTag"))
 		var resp Response
 		json.Unmarshal(respData, &resp)
 		if len(resp.Errors) > 0 {
@@ -101,6 +102,7 @@ func updateTaskTags(task Task) error {
 	return nil
 }
 
+//Checks a task for the Urgent tag
 func taskIsUrgent(taskGid string) (bool, error) {
 	task, err := getTask(taskGid)
 	if err != nil {
@@ -119,7 +121,7 @@ func taskIsUrgent(taskGid string) (bool, error) {
 func updateTaskFollowers(follower, taskId string) (Response, error) {
 	params := make(map[string]string)
 	params["followers[0]"] = follower
-	respData := postAsanaRequest(params, parseUrl(AsanaBase+"/tasks/"+taskId+"/addFollowers"))
+	respData := postAsanaRequest(params, parseURL(AsanaBase+"/tasks/"+taskId+"/addFollowers"))
 	var resp Response
 	json.Unmarshal(respData, &resp)
 	if len(resp.Errors) > 0 {
@@ -129,9 +131,9 @@ func updateTaskFollowers(follower, taskId string) (Response, error) {
 }
 
 //returns true if a project contains a user email
-func checkProjectEmail(userEmail string, supportProjectID string) (bool, error) {
+func checkProjectEmail(userEmail string, supportProjectId string) (bool, error) {
 	//get all the followers on a project
-	projectResponseData := getAsanaResponse(parseUrl(AsanaBase + "/projects/" + supportProjectID))
+	projectResponseData := getAsanaResponse(parseURL(AsanaBase + "/projects/" + supportProjectId))
 	var resp ProjectFollowersResponse
 	json.Unmarshal(projectResponseData, &resp)
 	if len(resp.Errors) > 0 {
@@ -158,6 +160,7 @@ func checkProjectEmail(userEmail string, supportProjectID string) (bool, error) 
 	return false, nil
 }
 
+//Find a needle in a haystack ignoring case
 func caseInsensitiveContains(s, substr string) bool {
 	s, substr = strings.ToUpper(s), strings.ToUpper(substr)
 	return strings.Contains(s, substr)
@@ -175,13 +178,13 @@ func isAsanaDomain(s string) bool {
 }
 
 //Parse a url and return string
-func parseUrl(u string) string {
-	var parsedUrl *url.URL
-	parsedUrl, err := url.Parse(u)
+func parseURL(u string) string {
+	var parsedURL *url.URL
+	parsedURL, err := url.Parse(u)
 	if err != nil {
 		log.Fatal(err)
 	}
-	return parsedUrl.String()
+	return parsedURL.String()
 }
 
 //Format the api erros into a single string

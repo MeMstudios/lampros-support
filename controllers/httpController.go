@@ -174,7 +174,7 @@ func WebhookEndpoint(w http.ResponseWriter, r *http.Request) {
 			return
 		} else {
 			fmt.Println("Invalid Webhook!")
-			w.Header().Set("X-Hook-Secret", "INVALID")
+			w.Header().Set("X-Hook-Secret", "INVALId")
 			w.WriteHeader(http.StatusForbidden)
 			w.Write([]byte(""))
 			return
@@ -232,17 +232,17 @@ func WebhookEndpoint(w http.ResponseWriter, r *http.Request) {
 }
 
 //Function called as a goroutine whenever we get a valid webhook payload
-func handleEvent(e Event, recips []string, toNumbers []string, supportProjectID string, supportEmail string) {
+func handleEvent(e Event, recips []string, toNumbers []string, supportProjectId string, supportEmail string) {
 	var eventType = e.Resource.ResourceType
 	fmt.Println("Type: " + eventType)
 	fmt.Println("Action: " + e.Action)
 	fmt.Println("Created at: " + e.Created)
 	fmt.Println("Parent: " + e.Parent.Gid)
-	fmt.Println("ID: " + e.Resource.Gid)
+	fmt.Println("Id: " + e.Resource.Gid)
 	switch eventType {
 	case "task":
-		parentGID := e.Parent.Gid
-		if e.Action == "added" && parentGID == supportProjectID {
+		parentGid := e.Parent.Gid
+		if e.Action == "added" && parentGid == supportProjectId {
 			taskId := e.Resource.Gid
 			task, err := getTask(taskId)
 			if err != nil {
@@ -280,7 +280,7 @@ func handleEvent(e Event, recips []string, toNumbers []string, supportProjectID 
 							for _, n := range toNumbers {
 								sendTwilioMessage(n, "You have an urgent support ticket that hasn't been responded to.  \n"+
 									"Please reply to the original email. Then leave a comment on the task in Asana to stop the text notifications! "+
-									"https://app.asana.com/0/"+supportProjectID+"/"+taskId)
+									"https://app.asana.com/0/"+supportProjectId+"/"+taskId)
 								fmt.Println("Sent semi-urgent text at:", t)
 							}
 						}
@@ -300,7 +300,7 @@ func handleEvent(e Event, recips []string, toNumbers []string, supportProjectID 
 									sendTwilioMessage(n, "You have an urgent support ticket that hasn't been responded to.  \n"+
 										"PLEASE RESPOND OR YOU WILL BE FINED! \n"+
 										"If you have already responded to the email ticket, please leave a comment on the Asana task to stop the texts: "+
-										"https://app.asana.com/0/"+supportProjectID+"/"+taskId)
+										"https://app.asana.com/0/"+supportProjectId+"/"+taskId)
 									fmt.Println("Sent urgent text at:", t)
 								}
 							}
@@ -317,7 +317,7 @@ func handleEvent(e Event, recips []string, toNumbers []string, supportProjectID 
 					sendEmail("You have a new urgent ticket.  Please respond to the client via the orginal email immediately.  \n\n"+
 						"Please remove the software support email from the recipient list and cc important parties.  \n\n"+
 						"Then leave a comment on the task in Asana to stop the urgent notifications: "+
-						"https://app.asana.com/0/"+supportProjectID+"/"+taskId,
+						"https://app.asana.com/0/"+supportProjectId+"/"+taskId,
 						"URGENT REQUEST PLEASE RESPOND", recips)
 				}
 				if story.StoryType == "comment_added" {

@@ -1,3 +1,10 @@
+/*
+Models package contains all struct models
+corresponding to individual APIs specification for json responses.
+response.go is all for Asana responses which use the Asana models,
+since they are sent with a potential array of errors.
+support.go implements the models for our projects.json.
+*/
 package models
 
 type SupportAgent struct {
