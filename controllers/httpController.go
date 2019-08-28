@@ -261,7 +261,9 @@ func handleEvent(e Event, recips []string, toNumbers []string, supportProjectID 
 					go func() {
 						for t := range bigTimer.Ticker.C {
 							for _, n := range toNumbers {
-								SendTwilioMessage(n, "You have an urgent support ticket that hasn't been responded to.  Please respond to the Kayako support ticket. Then leave a comment on the task in Asana to stop the text notifications! https://app.asana.com/0/"+supportProjectID+"/"+taskId)
+								SendTwilioMessage(n, "You have an urgent support ticket that hasn't been responded to.  \n"+
+									"Please reply to the original email. Then leave a comment on the task in Asana to stop the text notifications! "+
+									"https://app.asana.com/0/"+supportProjectID+"/"+taskId)
 								fmt.Println("Sent semi-urgent text at:", t)
 							}
 						}
@@ -278,7 +280,10 @@ func handleEvent(e Event, recips []string, toNumbers []string, supportProjectID 
 						go func() {
 							for t := range timer.Ticker.C {
 								for _, n := range toNumbers {
-									SendTwilioMessage(n, "You have an urgent support ticket that hasn't been responded to.  PLEASE RESPOND OR YOU WILL BE FINED! If you have already responded to the Kayako ticket, please leave a comment on the Asana task to stop the texts: https://app.asana.com/0/"+supportProjectID+"/"+taskId)
+									SendTwilioMessage(n, "You have an urgent support ticket that hasn't been responded to.  \n"+
+										"PLEASE RESPOND OR YOU WILL BE FINED! \n"+
+										"If you have already responded to the email ticket, please leave a comment on the Asana task to stop the texts: "+
+										"https://app.asana.com/0/"+supportProjectID+"/"+taskId)
 									fmt.Println("Sent urgent text at:", t)
 								}
 							}
@@ -292,7 +297,11 @@ func handleEvent(e Event, recips []string, toNumbers []string, supportProjectID 
 						}()
 					}()
 					fmt.Println("Urgent Tag Added.")
-					SendEmail("You have a new urgent ticket please respond to the client via the orginal/Kayako email immediately.  Then leave a comment on the task in Asana to stop the urgent notifications: https://app.asana.com/0/"+supportProjectID+"/"+taskId, "URGENT REQUEST PLEASE RESPOND", recips)
+					SendEmail("You have a new urgent ticket.  Please respond to the client via the orginal email immediately.  \n\n"+
+						"Please remove the software support email from the recipient list and cc important parties.  \n\n"+
+						"Then leave a comment on the task in Asana to stop the urgent notifications: "+
+						"https://app.asana.com/0/"+supportProjectID+"/"+taskId,
+						"URGENT REQUEST PLEASE RESPOND", recips)
 				}
 				if story.StoryType == "comment_added" {
 					fmt.Println("Comment Added")
