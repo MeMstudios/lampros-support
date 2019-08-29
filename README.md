@@ -4,6 +4,8 @@ This is a software support middle-ware system that integrates with Gmail, Asana,
 The challenge was to provide our clients with software support without paying an arm and a leg for text notifications with Zendesk.  The client sends emails to a single email address which forwards a task to Asana.  Once the task is added, the software reads the message and title, applying an urgent tag if it contains: urgent, asap, or important, in any form.  After the urgent tag is added (could be added manually as well), it will send a notification email, followed by text messages on a schedule until you leave a comment in Asana.  
 
 Originally, it was set up to add client users to tasks in Asana when they sent a ticket.  So the agent could respond to an Asana email, leaving a comment in Asana and stopping the urgent text notifications.  The client complained about too many emails from Asana so we stopped that.  Which means you have to follow the links from the support ticket email to leave a comment in Asana after you reply to the original email.  
+
+There used to be more Gmail functionality to get the sender of an email and add them to the task in Asana.  Now, the only thing it does with Gmail is mark the email messages matching the software support address in the contact@lamproslabs.com inbox as READ.  
 Most of the Gmail functionality is external setup, described below.  
 
 Usage
@@ -12,7 +14,7 @@ Emails
 ---
 Create the group in Google Admin with the email for the client to send tickets to.  
 Add contact@lamproslabs.com to the group.  
-Create a filter in the contact@lamproslabs.com account to forward emails to the support project in Asana when the to: matches the software support email address. And from: matches the client's email domain.  
+Create a filter in the contact@lamproslabs.com account to forward emails to the support project in Asana when the to: matches the software support email address and from: matches the client's email domain.  
 The support email must be setup as a user in Asana and *TURN OFF EMAIL NOTIFICATIONS* or you will start an infinite email loop!  
 
 All Agents should be added to the Gmail support group as well.  
@@ -25,18 +27,18 @@ The email should be the support group email and the id is the Asana project id, 
 
 The Webhook
 ---
-If you are adding a new support project, you will need to activate a webhook with asana.  You will just need the Asana API access token from our account.  I used postman to POST to https://app.asana.com/api/1.0/webhooks with form-data in the body containing resource: new_project_id, target: https://our/webhook/endpoint which should be obscured and kept secret.
+If you are adding a new support project, you will need to activate a webhook with asana.  You will just need the Asana API access token from our account.  I used postman to POST to https://app.asana.com/api/1.0/webhooks with form-data in the body containing: resource: new_project_id, target: https://our/webhook/endpoint which should be obscured and kept secret.
 
 Notes
 ---
-At this time it does not check for if a COMMENT was added by a customer that could indicate the task is urgent.  
 The urgent tag will only be set automatically if someone emails to the support email with a subject or body containing any form of the word 'urgent', 'asap', or 'important'  
 However, the urgent response texts/emails will start to get sent if the urgent tag is set manually.  
 Any user with @lamproslabs.com email address should be able to leave a comment to stop the urgent texts.  
 
-Setup
+Development Setup
 ===
 Install [Golang](https://golang.org/doc/install) and cd into the folder.  
+
 Google Oauth
 ---
 running `go build` should require you to setup Google OAuth for the gmail library. (Follow the instructions from the command line.)  
