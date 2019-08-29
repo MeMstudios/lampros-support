@@ -1,11 +1,10 @@
 Description
 ===
 This is a software support middle-ware system that integrates with Gmail, Asana, and Twilio.  
-The challenge was to provide our clients with software support without paying an arm and a leg for text notifications with Zendesk.  The client sends emails to a single email address which forwards a task to Asana.  Once the task is added, the software reads the message and title, applying an urgent tag if it contains: urgent, asap, or important, in any form.  After the urgent tag is added (could be added manually as well), it will send a notification email, followed by text messages on a schedule until you leave a comment in Asana.  
+The challenge was to provide our clients with software support without paying an arm and a leg for text notifications with Zendesk.  An added bonus: also keeping our tasks in one project management system.  
+The client sends emails to a single email address which forwards a task to Asana.  Once the task is added, Asana sends an event to our server.  The software reads the message and title, applying an urgent tag if it contains: urgent, asap, or important.  After the urgent tag is added (could also be added manually) it will send a notification email, followed by text messages on a schedule until you leave a comment in Asana.  
 
-Originally, it was set up to add client users to tasks in Asana when they sent a ticket.  So the agent could respond to an Asana email, leaving a comment in Asana and stopping the urgent text notifications.  The client complained about too many emails from Asana so we stopped that.  Which means you have to follow the links from the support ticket email to leave a comment in Asana after you reply to the original email.  
-
-There used to be more Gmail functionality to get the sender of an email and add them to the task in Asana.  Now, the only thing it does with Gmail is mark the email messages matching the software support address in the contact@lamproslabs.com inbox as READ.  
+There used to be more Gmail functionality to get the sender of an email and add them to the task in Asana.  However, the client complained about getting too many Asana emails.  Now, the only thing it does with Gmail is check for email messages matching the software support address in the inbox and remove them from *unread*.  I deleted the logic in the main function.  However, there are still functions in the controllers to add followers to a project, and get senders from a Gmail message.  
 Most of the Gmail functionality is external setup, described below.  
 
 Usage

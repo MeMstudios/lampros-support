@@ -291,7 +291,7 @@ func handleEvent(e Event, recips []string, toNumbers []string, supportProjectId 
 								if err != nil {
 									fmt.Println(err)
 								} else {
-									fmt.Printf("Sent semi-urgent text to: %s at: %s", resp.To, t)
+									fmt.Printf("Sent semi-urgent text to: %s at: %s\n", resp.To, t)
 								}
 							}
 						}
@@ -320,7 +320,7 @@ func handleEvent(e Event, recips []string, toNumbers []string, supportProjectId 
 									if err != nil {
 										fmt.Println(err)
 									} else {
-										fmt.Printf("Sent urgent text to: %s at: %s", resp.To, t)
+										fmt.Printf("Sent urgent text to: %s at: %s\n", resp.To, t)
 									}
 								}
 							}
