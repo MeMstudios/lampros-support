@@ -79,11 +79,11 @@ Golang Notes
 Please note: all functions that start with lowercase are private to their package.  
 You should be able to extend this or fork it interact with most of Asana's API.  
 Gmail API is a different pattern because we are using the Golang SDK for it.  
-You can do anything with the Gmail API as well, just check out the [documentation] (https://godoc.org/google.golang.org/api/gmail/v1)
+You can do anything with the Gmail API as well, just check out the [documentation](https://godoc.org/google.golang.org/api/gmail/v1)
 
 Deployment
 ---
-It's currently running on a Linux AMI machine as a service.  
+It's currently running on a Linux AMI as a service.  
 This setup will be different based on what kind of machine you're running.  
 If you can get sudo access to the server (currently, Troy's digissance server) where it's hosted you can `service lampros-support stop` or `service lampros-support start` or `service lampros-support restart`  
 The binary file is uploaded to `/home/michael/go/src/` you must stop the service to upload and then start again.  
