@@ -23,10 +23,10 @@ import (
 	"github.com/gorilla/mux"
 )
 
-//Make my timers array which should be accessible by this file
+// Make my timers array which should be accessible by this file
 var timers []TickerTimer
 
-//GET a JSON response from an API
+// GET a JSON response from an API
 func getAsanaResponse(request string) []byte {
 	bearer := "Bearer " + AsanaAccessToken
 
@@ -34,7 +34,7 @@ func getAsanaResponse(request string) []byte {
 
 	req.Header.Add("Authorization", bearer)
 
-	//send request using http client
+	// send request using http client
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
@@ -49,8 +49,8 @@ func getAsanaResponse(request string) []byte {
 
 }
 
-//POST Request with a map of parameters
-//returns the response as byte array
+// POST Request with a map of parameters
+// returns the response as byte array
 func postAsanaRequest(params map[string]string, request string) []byte {
 	data := url.Values{}
 
@@ -66,7 +66,7 @@ func postAsanaRequest(params map[string]string, request string) []byte {
 	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
 	req.Header.Add("Content-Length", strconv.Itoa(len(data.Encode())))
 
-	//send request using http client
+	// send request using http client
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
@@ -80,8 +80,8 @@ func postAsanaRequest(params map[string]string, request string) []byte {
 	return responseData
 }
 
-//POST Request for twilio
-//returns the response as byte array
+// POST Request for twilio
+// returns the response as byte array
 func postTwilioRequest(params map[string]string, request string) []byte {
 	data := url.Values{}
 
@@ -95,7 +95,7 @@ func postTwilioRequest(params map[string]string, request string) []byte {
 	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
 	req.Header.Add("Content-Length", strconv.Itoa(len(data.Encode())))
 
-	//send request using http client
+	// send request using http client
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
@@ -118,7 +118,7 @@ func TestEndpoint(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("Test")
 }
 
-//Not using right now
+// Not using right now
 // func AddAgentEndpoint(w http.ResponseWriter, r *http.Request) {
 // 	defer r.Body.Close()
 // 	var newAgent SupportAgent
@@ -146,16 +146,16 @@ func TestEndpoint(w http.ResponseWriter, r *http.Request) {
 // 	w.Write(response)
 // }
 
-//POST endpoint for Asana to send events in webhooks
+// POST endpoint for Asana to send events in webhooks
 func WebhookEndpoint(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 	fmt.Println("///////////////////////Recieved Webhook//////////////////")
 	var event WebhookEvent
-	//debug := formatRequest(r)
+	// debug := formatRequest(r)
 	if err := json.NewDecoder(r.Body).Decode(&event); err != nil {
 		respondWithError(w, http.StatusBadRequest, "Invalid request payload")
 		fmt.Printf("invalid request payload: %v\n", err)
-		//fmt.Println(debug)
+		// fmt.Println(debug)
 		return
 	}
 	events := event.Events
@@ -163,9 +163,9 @@ func WebhookEndpoint(w http.ResponseWriter, r *http.Request) {
 	if len(event.Errors) > 0 {
 		log.Fatal(event.Errors)
 	}
-	//0 events should mean you're trying to create a webhook
+	// 0 events should mean you're trying to create a webhook
 	if len(events) == 0 {
-		//IF initiating webhook, stop here and send back the x-hook-secret
+		// IF initiating webhook, stop here and send back the x-hook-secret
 		hookSecret := r.Header.Get("X-Hook-Secret")
 		if hookSecret != "" { //Checking for the correct headers
 			fmt.Println("Creating Webhook!")
@@ -180,14 +180,14 @@ func WebhookEndpoint(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
-	//Since it's not invalid and we're not creating a new webhook, move on to handle events.
+	// Since it's not invalid and we're not creating a new webhook, move on to handle events.
 	supportProjects := readProjectsJSON("/home/michael/go/src/projects.json")
 	var agentEmails []string
 	var agentNumbers []string
 	var projectId string
 	var supportEmail string
 	for _, e := range events {
-		//Figure out the project id and the agents associated with the project.
+		// Figure out the project id and the agents associated with the project.
 		if e.Parent.Gid != "" {
 			for _, p := range supportProjects.Projects {
 				if e.Parent.Gid == p.ProjectId {
@@ -200,14 +200,14 @@ func WebhookEndpoint(w http.ResponseWriter, r *http.Request) {
 				}
 			}
 			if projectId == "" && e.Parent.Gid != UrgentTagGid {
-				//If the projectId wasn't found it should be a story added so the parent will be the task Id
+				// If the projectId wasn't found it should be a story added so the parent will be the task Id
 				task, err := getTask(e.Parent.Gid)
 				if err != nil {
 					fmt.Println(err)
 					return
 				}
 				for _, p := range supportProjects.Projects {
-					//Loop through the task's projects to compare with ours
+					// Loop through the task's projects to compare with ours
 					for _, proj := range task.Projects {
 						if proj.Gid == p.ProjectId {
 							projectId = e.Parent.Gid
@@ -221,7 +221,7 @@ func WebhookEndpoint(w http.ResponseWriter, r *http.Request) {
 				}
 			}
 			if projectId != "" {
-				//if we found a project id start a goroutine to handle all the events individually.
+				// if we found a project id start a goroutine to handle all the events individually.
 				go handleEvent(e, agentEmails, agentNumbers, projectId, supportEmail)
 			}
 		}
@@ -231,7 +231,7 @@ func WebhookEndpoint(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte("thanks"))
 }
 
-//Function called as a goroutine whenever we get a valid webhook payload
+// Function called as a goroutine whenever we get a valid webhook payload
 func handleEvent(e Event, recips []string, toNumbers []string, supportProjectId string, supportEmail string) {
 	var eventType = e.Resource.ResourceType
 	fmt.Println("Type: " + eventType)
@@ -272,16 +272,16 @@ func handleEvent(e Event, recips []string, toNumbers []string, supportProjectId 
 			if urgent {
 				fmt.Println("URGENT TASK DETECTED")
 				if story.StoryType == "added_to_tag" {
-					//bigTimer handle the 5 minute texts
+					// bigTimer handle the 5 minute texts
 					bigTimer, err := startUrgentTimer(storyId, taskId, 1)
 					if err != nil {
 						fmt.Printf("Timer not started: %v\n", err)
 					}
-					//Add the timer to the timer array using the task id as key.
+					// Add the timer to the timer array using the task id as key.
 					timers = append(timers, bigTimer)
-					//Here starts a control flow for the Timers.
-					//We use a goroutine to handle the ticking so the execution will continue.
-					//Each tick sends a text message
+					// Here starts a control flow for the Timers.
+					// We use a goroutine to handle the ticking so the execution will continue.
+					// Each tick sends a text message
 					go func() {
 						for t := range bigTimer.Ticker.C {
 							for _, n := range toNumbers {
@@ -296,8 +296,8 @@ func handleEvent(e Event, recips []string, toNumbers []string, supportProjectId 
 							}
 						}
 					}()
-					//When big timer runs out it pushes up the channel.
-					//We stop the ticker and start the 1 minute texts with timer.
+					// When big timer runs out it pushes up the channel.
+					// We stop the ticker and start the 1 minute texts with timer.
 					go func() {
 						<-bigTimer.Timer.C
 						bigTimer.Ticker.Stop()
@@ -325,8 +325,8 @@ func handleEvent(e Event, recips []string, toNumbers []string, supportProjectId 
 								}
 							}
 						}()
-						//When the time runs out delete the tickers.
-						//If you didn't get the message by now, something else is wrong.
+						// When the time runs out delete the tickers.
+						// If you didn't get the message by now, something else is wrong.
 						go func() {
 							<-timer.Timer.C
 							timer.Ticker.Stop()
@@ -335,16 +335,16 @@ func handleEvent(e Event, recips []string, toNumbers []string, supportProjectId 
 							fmt.Println("Short timer deleted")
 						}()
 					}()
-					//Execution jumps to here after the first timer is started.
+					// Execution jumps to here after the first timer is started.
 					fmt.Println("Urgent Tag Added.")
-					//Send one email for any urgent ticket.
+					// Send one email for any urgent ticket.
 					sendEmail("You have a new urgent ticket.  Please respond to the client via the orginal email immediately.  \n\n"+
 						"Please remove the software support email from the recipient list and cc important parties.  \n\n"+
 						"Then leave a comment on the task in Asana to stop the urgent notifications: "+
 						"https://app.asana.com/0/"+supportProjectId+"/"+taskId,
 						"URGENT REQUEST PLEASE RESPOND", recips)
 				}
-				//When a comment is added, check if made by a lampros employee and stop the texts.
+				// When a comment is added, check if made by a lampros employee and stop the texts.
 				if story.StoryType == "comment_added" {
 					fmt.Println("Comment Added")
 					commenter, err := getUser(story.CreatedBy.Gid)
@@ -355,7 +355,7 @@ func handleEvent(e Event, recips []string, toNumbers []string, supportProjectId 
 					commenterEmailParts := strings.Split(commenter.Email, "@")
 					commenterEmailDomain := commenterEmailParts[1]
 					if commenterEmailDomain == "lamproslabs.com" {
-						//STOP THE TIMERS by finding them in the array with the task id key.
+						// STOP THE TIMERS by finding them in the array with the task id key.
 						for i, t := range timers {
 							fmt.Println("Timer ", i)
 							if t.TaskId == taskId {
@@ -375,14 +375,14 @@ func handleEvent(e Event, recips []string, toNumbers []string, supportProjectId 
 // formatRequest generates ascii representation of a request
 // Used for debugging
 // func formatRequest(r *http.Request) string {
-// 	// Create return string
+// 	//  Create return string
 // 	var request []string
-// 	// Add the request string
+// 	//  Add the request string
 // 	url := fmt.Sprintf("%v %v %v", r.Method, r.URL, r.Proto)
 // 	request = append(request, url)
-// 	// Add the host
+// 	//  Add the host
 // 	request = append(request, fmt.Sprintf("Host: %v", r.Host))
-// 	// Loop through headers
+// 	//  Loop through headers
 // 	for name, headers := range r.Header {
 // 		name = strings.ToLower(name)
 // 		for _, h := range headers {
@@ -390,9 +390,9 @@ func handleEvent(e Event, recips []string, toNumbers []string, supportProjectId 
 // 		}
 // 	}
 
-// 	// If this is a POST, add post data
+// 	//  If this is a POST, add post data
 // 	if r.Method == "POST" {
-// 		// Save a copy of this request for debugging.
+// 		//  Save a copy of this request for debugging.
 // 		requestDump, err := httputil.DumpRequest(r, true)
 // 		if err != nil {
 // 			fmt.Println(err)
@@ -400,11 +400,11 @@ func handleEvent(e Event, recips []string, toNumbers []string, supportProjectId 
 // 		request = append(request, "\n")
 // 		request = append(request, string(requestDump))
 // 	}
-// 	// Return the request as a string
+// 	//  Return the request as a string
 // 	return strings.Join(request, "\n")
 // }
 
-//Helper function to read the local projects file
+// Helper function to read the local projects file
 func readProjectsJSON(file string) *Projects {
 	f, err := os.Open(file)
 	if err != nil {
@@ -419,7 +419,7 @@ func readProjectsJSON(file string) *Projects {
 	return proj
 }
 
-//Not using right now
+// Not using right now
 // func writeAgentsToJSON(file string) error {
 // 	newAgentJSON, err := json.Marshal(agents)
 // 	if err != nil {
@@ -448,22 +448,22 @@ func respondWithJson(w http.ResponseWriter, code int, payload interface{}) {
 }
 
 func StartRouter() {
-	//fire up the gorilla router
+	// fire up the gorilla router
 	r := mux.NewRouter()
 
-	//Endpoints
-	r.HandleFunc("/receive-webhook/13r98iof2jejqeg309ihe4oq9ug3029givje", WebhookEndpoint).Methods("POST")
+	// Endpoints
+	r.HandleFunc("/receive-webhook/"+WebhookURI, WebhookEndpoint).Methods("POST")
 	r.HandleFunc("/test", TestEndpoint).Methods("GET")
-	//r.HandleFunc("/add-agent", AddAgentEndpoint).Methods("POST")
+	// r.HandleFunc("/add-agent", AddAgentEndpoint).Methods("POST")
 
 	if Environment == "prod" {
-		//Release the hounds
+		// Release the hounds
 		fmt.Println("Releasing the hounds securely.")
 		if err := http.ListenAndServeTLS(":4443", "/etc/letsencrypt/live/supportapi.lamproslabs.com/fullchain.pem", "/etc/letsencrypt/live/supportapi.lamproslabs.com/privkey.pem", r); err != nil {
 			log.Fatal(err)
 		}
 	} else {
-		//Release the hounds
+		// Release the hounds
 		fmt.Println("Releasing the hounds.")
 		if err := http.ListenAndServe(":3000", r); err != nil {
 			log.Fatal(err)

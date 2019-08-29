@@ -16,7 +16,7 @@ import (
 	"google.golang.org/api/gmail/v1"
 )
 
-// Retrieve a token, saves the token, then returns the generated client.
+//  Retrieve a token, saves the token, then returns the generated client.
 func getClient(config *oauth2.Config) *http.Client {
 	// The file token.json stores the user's access and refresh tokens, and is
 	// created automatically when the authorization flow completes for the first
@@ -30,7 +30,7 @@ func getClient(config *oauth2.Config) *http.Client {
 	return config.Client(context.Background(), tok)
 }
 
-// Request a token from the web, then returns the retrieved token.
+//  Request a token from the web, then returns the retrieved token.
 func getTokenFromWeb(config *oauth2.Config) *oauth2.Token {
 	authURL := config.AuthCodeURL("state-token", oauth2.AccessTypeOffline)
 	fmt.Printf("Go to the following link in your browser then type the "+
@@ -48,7 +48,7 @@ func getTokenFromWeb(config *oauth2.Config) *oauth2.Token {
 	return tok
 }
 
-// Retrieves a token from a local file.
+//  Retrieves a token from a local file.
 func tokenFromFile(file string) (*oauth2.Token, error) {
 	f, err := os.Open(file)
 	if err != nil {
@@ -60,7 +60,7 @@ func tokenFromFile(file string) (*oauth2.Token, error) {
 	return tok, err
 }
 
-// Saves a token to a file path.
+//  Saves a token to a file path.
 func saveToken(path string, token *oauth2.Token) {
 	fmt.Printf("Saving credential file to: %s\n", path)
 	f, err := os.OpenFile(path, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0600)
@@ -110,7 +110,7 @@ func getSender(id string) string {
 	return from
 }
 
-// returns all the unread messages in the users inbox sent to a certain email address
+//  returns all the unread messages in the users inbox sent to a certain email address
 func getMessages(user string, supportEmailAddress string) []*gmail.Message {
 	api := startGmailClient()
 	mesList, err := api.Users.Messages.List(user).Q("to:" + supportEmailAddress + " is:unread").Do()
@@ -123,7 +123,7 @@ func getMessages(user string, supportEmailAddress string) []*gmail.Message {
 	return mesList.Messages
 }
 
-// removes a message from the "unread" list in gmail by id
+//  removes a message from the "unread" list in gmail by id
 func readMessage(user string, id string) {
 	api := startGmailClient()
 	var req gmail.ModifyMessageRequest

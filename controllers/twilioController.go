@@ -9,7 +9,7 @@ import (
 	"time"
 )
 
-//Send a message to any valid phone number
+// Send a message to any valid phone number
 func sendTwilioMessage(toNumber, message string) (TwilioMessageResponse, error) {
 	params := make(map[string]string)
 	params["To"] = toNumber
@@ -24,14 +24,15 @@ func sendTwilioMessage(toNumber, message string) (TwilioMessageResponse, error) 
 	return resp, nil
 }
 
-//This function starts a big timer for one hour (the maximum response time for urgent tickets)
-//This starts tickers to fire off the various levels of urgent texts.
-//Urgency: 1 = 5 minute ticks, 2 = 1 minute ticks, 0 = 10 minute ticks for 20 minutes (change for testing)
-//From the agreement:
-//If reported issues are marked as emergency or high-priority when reported,
-//the company will provide a response within 1 hour during normal business hours as defined above,
-//3 hours if the report is made outside of normal business hours,
-//and 6 hours if during the holiday.
+// This function starts a timer for one hour or 3 hours:
+// the maximum response time for urgent tickets based on time of day.
+// It starts tickers used to fire off the various levels of urgent texts:
+// Urgency: 1 = 5 minute ticks, 2 = 1 minute ticks, 0 = 10 minute ticks for 20 minutes (change for testing)
+// From the agreement:
+// If reported issues are marked as emergency or high-priority when reported,
+// the company will provide a response within 1 hour during normal business hours as defined above,
+// 3 hours if the report is made outside of normal business hours,
+// and 6 hours if during the holiday.
 func startUrgentTimer(gid, taskId string, urgency int) (TickerTimer, error) {
 	var timer *time.Timer
 	var ticker *time.Ticker
@@ -58,7 +59,7 @@ func startUrgentTimer(gid, taskId string, urgency int) (TickerTimer, error) {
 		ticker = time.NewTicker(time.Minute)
 	}
 
-	//This is how I send a message to a channel associated with the timer.
+	// This is how I send a message to a channel associated with the timer.
 	channelTimer.Gid = gid
 	channelTimer.TaskId = taskId
 	channelTimer.Timer = timer
@@ -66,7 +67,7 @@ func startUrgentTimer(gid, taskId string, urgency int) (TickerTimer, error) {
 	return channelTimer, nil
 }
 
-//Stops a timer.  If it fails to stop we flush the channel in case there is still a thread
+// Stops a timer.  If it fails to stop we flush the channel in case there is still a thread
 func stopTimer(timer TickerTimer) {
 	stopTime := timer.Timer.Stop()
 	timer.Ticker.Stop()
@@ -78,8 +79,8 @@ func stopTimer(timer TickerTimer) {
 	return
 }
 
-//Accepts parameters TickerTimer array and TickerTimer to delete from the array.
-//Returns the modified array of TickerTimers
+// Accepts parameters TickerTimer array and TickerTimer to delete from the array.
+// Returns the modified array of TickerTimers
 func deleteFromTimers(timers []TickerTimer, timer TickerTimer) []TickerTimer {
 	if len(timers) > 1 {
 		for i, t := range timers {
