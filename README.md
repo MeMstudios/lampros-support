@@ -1,21 +1,31 @@
+Description
+===
+This is a software support middle-ware system that integrates with Gmail, Asana, and Twilio.  
+The challenge was to provide our clients with software support without paying an arm and a leg for text notifications with Zendesk.  The client sends emails to a single email address which forwards a task to Asana.  Once the task is added, the software reads the message and title, applying an urgent tag if it contains: urgent, asap, or important, in any form.  After the urgent tag is added (could be added manually as well), it will send a notification email, followed by text messages on a schedule until you leave a comment in Asana.  
+
+Originally, it was set up to add client users to tasks in Asana when they sent a ticket.  So the agent could respond to an Asana email, leaving a comment in Asana and stopping the urgent text notifications.  The client complained about too many emails from Asana so we stopped that.  Which means you have to follow the links from the support ticket email to leave a comment in Asana after you reply to the original email.  
+Most of the Gmail functionality is external setup, described below.  
+
 Usage
 ===
 Emails
 ---
 Create the group in Google Admin with the email for the client to send tickets to.  
 Add contact@lamproslabs.com to the group.  
-Create a filter in the contact@lamproslabs.com account to forward emails to the support project in Asana when the to: matches the software support email address.  
+Create a filter in the contact@lamproslabs.com account to forward emails to the support project in Asana when the to: matches the software support email address. And from: matches the client's email domain.  
 The support email must be setup as a user in Asana and *TURN OFF EMAIL NOTIFICATIONS* or you will start an infinite email loop!  
-Client email addresses should be added to the Asana project.  
 
-If you are in the gmail support group, you should not immediately respond to the initial email.  Wait until you get the software support notification and take the link to the Asana task and leave a comment there to respond.  Now everyone will be on the email list.  
-contact@lamproslabs.com and the support email addresses should not get Asana notifications.  Turn them off in Asana.  
-Not all the support agents need to be added to the gmail support group.  Troy gets emails from contact@lamproslabs.com anyway.  Agents will get emails and texts if you add them to the projects.json file.  
+All Agents should be added to the Gmail support group as well.  
+You should respond to the incoming email by removing the software support address and cc'ing all important parties.  If you don't remove the support address when responding to a ticket, the client will reply, sending another ticket to Asana.  
 
 Add Support Agents
 ---
 Simply, modify the projects.json file and upload to the digissance.com server under `/home/michael/go/src`  
 The email should be the support group email and the id is the Asana project id, found in the URL of any project.  I think it's clear what to do with the agents portion.  
+
+The Webhook
+---
+If you are adding a new support project, you will need to activate a webhook with asana.  You will just need the Asana API access token from our account.  I used postman to POST to https://app.asana.com/api/1.0/webhooks with form-data in the body containing resource: new_project_id, target: https://our/webhook/endpoint which should be obscured and kept secret.
 
 Notes
 ---
@@ -61,6 +71,13 @@ Constants
 When `Environment` is set to `prod` the app will "release the hounds securely" (starting up with SSL). Set it to anything else for local development.  
 Prod mode requires you to have the fullchain.pem and privkey.pem in the same folder, or update the code in httpController to have the full path to those files.  
 Also contains the twilio number from the twilio account used to send texts.
+
+Golang Notes
+---
+Please note: all functions that start with lowercase are private to their package.  
+You should be able to extend this or fork it interact with most of Asana's API.  
+Gmail API is a different pattern because we are using the Golang SDK for it.  
+You can do anything with the Gmail API as well, just check out the [documentation] (https://godoc.org/google.golang.org/api/gmail/v1)
 
 Deployment
 ---

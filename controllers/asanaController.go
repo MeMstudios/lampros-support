@@ -110,7 +110,7 @@ func taskIsUrgent(taskGid string) (bool, error) {
 	}
 	for _, t := range task.Tags {
 		if t.Gid == UrgentTagGid {
-			return false, nil
+			return true, nil
 		}
 	}
 	return false, nil

@@ -2,6 +2,7 @@
 Package containing the controllers for each API implementation (Asana, Twilio, and Gmail).
 Twilio controller has the ticker/timer code for timing the texts.
 This file is the HTTP controller for our REST API containing most of the business logic.
+As well as the GET and POST methods to the external services.
 You will need a credentials.go file (API credentials) in this package described in the README.
 */
 package controllers
@@ -174,7 +175,6 @@ func WebhookEndpoint(w http.ResponseWriter, r *http.Request) {
 			return
 		} else {
 			fmt.Println("Invalid Webhook!")
-			w.Header().Set("X-Hook-Secret", "INVALId")
 			w.WriteHeader(http.StatusForbidden)
 			w.Write([]byte(""))
 			return
@@ -199,7 +199,7 @@ func WebhookEndpoint(w http.ResponseWriter, r *http.Request) {
 					}
 				}
 			}
-			if projectId == "" {
+			if projectId == "" && e.Parent.Gid != UrgentTagGid {
 				//If the projectId wasn't found it should be a story added so the parent will be the task Id
 				task, err := getTask(e.Parent.Gid)
 				if err != nil {
@@ -272,9 +272,13 @@ func handleEvent(e Event, recips []string, toNumbers []string, supportProjectId 
 			if urgent {
 				fmt.Println("URGENT TASK DETECTED")
 				if story.StoryType == "added_to_tag" {
+					//bigTimer handle the 5 minute texts
 					bigTimer := startUrgentTimer(storyId, taskId, 1)
 					//Add the timer to the timer array using the task id as key.
 					timers = append(timers, bigTimer)
+					//Here starts a control flow for the Timers.
+					//We use a goroutine to handle the ticking so the execution will continue.
+					//Each tick sends a text message
 					go func() {
 						for t := range bigTimer.Ticker.C {
 							for _, n := range toNumbers {
@@ -285,6 +289,8 @@ func handleEvent(e Event, recips []string, toNumbers []string, supportProjectId 
 							}
 						}
 					}()
+					//When big timer runs out it pushes up the channel.
+					//We stop the ticker and start the 1 minute texts with timer.
 					go func() {
 						<-bigTimer.Timer.C
 						bigTimer.Ticker.Stop()
@@ -305,6 +311,8 @@ func handleEvent(e Event, recips []string, toNumbers []string, supportProjectId 
 								}
 							}
 						}()
+						//When the time runs out delete the tickers.
+						//If you didn't get the message by now, something else is wrong.
 						go func() {
 							<-timer.Timer.C
 							timer.Ticker.Stop()
@@ -313,13 +321,16 @@ func handleEvent(e Event, recips []string, toNumbers []string, supportProjectId 
 							fmt.Println("Short timer deleted")
 						}()
 					}()
+					//Execution jumps to here after the first timer is started.
 					fmt.Println("Urgent Tag Added.")
+					//Send one email for any urgent ticket.
 					sendEmail("You have a new urgent ticket.  Please respond to the client via the orginal email immediately.  \n\n"+
 						"Please remove the software support email from the recipient list and cc important parties.  \n\n"+
 						"Then leave a comment on the task in Asana to stop the urgent notifications: "+
 						"https://app.asana.com/0/"+supportProjectId+"/"+taskId,
 						"URGENT REQUEST PLEASE RESPOND", recips)
 				}
+				//When a comment is added, check if made by a lampros employee and stop the texts.
 				if story.StoryType == "comment_added" {
 					fmt.Println("Comment Added")
 					commenter, err := getUser(story.CreatedBy.Gid)
@@ -341,7 +352,6 @@ func handleEvent(e Event, recips []string, toNumbers []string, supportProjectId 
 						}
 						fmt.Println("Comment made by support team.")
 					}
-
 				}
 			}
 		}
@@ -387,12 +397,12 @@ func readProjectsJSON(file string) *Projects {
 		log.Fatalf("Couldn't read agent json: %v", err)
 	}
 	defer f.Close()
-	a := &Projects{}
-	err = json.NewDecoder(f).Decode(a)
+	proj := &Projects{}
+	err = json.NewDecoder(f).Decode(proj)
 	if err != nil {
 		log.Fatalf("Error decoding agent json: %v", err)
 	}
-	return a
+	return proj
 }
 
 //Not using right now
@@ -414,7 +424,10 @@ func respondWithError(w http.ResponseWriter, code int, msg string) {
 }
 
 func respondWithJson(w http.ResponseWriter, code int, payload interface{}) {
-	response, _ := json.Marshal(payload)
+	response, err := json.Marshal(payload)
+	if err != nil {
+		log.Fatalf("Internal JSON error: %v", err)
+	}
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(code)
 	w.Write(response)

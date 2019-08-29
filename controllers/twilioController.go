@@ -8,6 +8,7 @@ import (
 	"time"
 )
 
+//Send a message to any valid phone number
 func sendTwilioMessage(toNumber, message string) TwilioMessageResponse {
 	params := make(map[string]string)
 	params["To"] = toNumber
@@ -24,6 +25,7 @@ func sendTwilioMessage(toNumber, message string) TwilioMessageResponse {
 
 //This function starts a big timer for one hour (the maximum response time for urgent tickets)
 //This starts tickers to fire off the various levels of urgent texts.
+//Urgency: 1 = 5 minute ticks, 2 = 1 minute ticks, 0 = 10 minute ticks for 20 minutes (change for testing)
 //From the agreement:
 //If reported issues are marked as emergency or high-priority when reported,
 //the company will provide a response within 1 hour during normal business hours as defined above,
@@ -77,7 +79,7 @@ func stopTimer(timer TickerTimer) {
 }
 
 //Accepts parameters TickerTimer array and TickerTimer to delete from the array.
-//Returns the modified array TickerTimers
+//Returns the modified array of TickerTimers
 func deleteFromTimers(timers []TickerTimer, timer TickerTimer) []TickerTimer {
 	if len(timers) > 1 {
 		for i, t := range timers {
