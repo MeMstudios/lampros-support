@@ -35,6 +35,7 @@ func getTasks(supportProjectId string) ([]Task, error) {
 	return tasks, nil
 }
 
+//Returns a task object from Asana and api errors
 func getTask(taskId string) (Task, error) {
 	var resp TaskResponse
 	//Get the task response data
@@ -47,6 +48,7 @@ func getTask(taskId string) (Task, error) {
 	return resp.Task, nil
 }
 
+//Returns a story object from Asana and api errors
 func getStory(storyId string) (Story, error) {
 	var resp StoryResponse
 	responseData := getAsanaResponse(parseURL(AsanaBase + "/stories/" + storyId))
@@ -79,7 +81,8 @@ func getUserByEmail(userEmail string) (User, error) {
 	return userResp.User, nil
 }
 
-//Updates a task to have the Urgent tag based on the Asana task description or title
+//Accepts a task object
+//Updates the task to have the Urgent tag based on the Asana task description or title
 func updateTaskTags(task Task) error {
 	params := make(map[string]string)
 	params["tag"] = UrgentTagGid

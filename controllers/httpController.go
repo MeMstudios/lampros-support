@@ -273,7 +273,10 @@ func handleEvent(e Event, recips []string, toNumbers []string, supportProjectId 
 				fmt.Println("URGENT TASK DETECTED")
 				if story.StoryType == "added_to_tag" {
 					//bigTimer handle the 5 minute texts
-					bigTimer := startUrgentTimer(storyId, taskId, 1)
+					bigTimer, err := startUrgentTimer(storyId, taskId, 1)
+					if err != nil {
+						fmt.Printf("Timer not started: %v\n", err)
+					}
 					//Add the timer to the timer array using the task id as key.
 					timers = append(timers, bigTimer)
 					//Here starts a control flow for the Timers.
@@ -282,10 +285,14 @@ func handleEvent(e Event, recips []string, toNumbers []string, supportProjectId 
 					go func() {
 						for t := range bigTimer.Ticker.C {
 							for _, n := range toNumbers {
-								sendTwilioMessage(n, "You have an urgent support ticket that hasn't been responded to.  \n"+
+								resp, err := sendTwilioMessage(n, "You have an urgent support ticket that hasn't been responded to.  \n"+
 									"Please reply to the original email. Then leave a comment on the task in Asana to stop the text notifications! "+
 									"https://app.asana.com/0/"+supportProjectId+"/"+taskId)
-								fmt.Println("Sent semi-urgent text at:", t)
+								if err != nil {
+									fmt.Println(err)
+								} else {
+									fmt.Printf("Sent semi-urgent text to: %s at: %s", resp.To, t)
+								}
 							}
 						}
 					}()
@@ -297,17 +304,24 @@ func handleEvent(e Event, recips []string, toNumbers []string, supportProjectId 
 						fmt.Println("big ticker stopped.")
 						timers = deleteFromTimers(timers, bigTimer)
 						fmt.Println("big timer deleted.")
-						timer := startUrgentTimer(storyId, taskId, 2)
+						timer, err := startUrgentTimer(storyId, taskId, 2)
+						if err != nil {
+							fmt.Printf("Timer not started: %v\n", err)
+						}
 						timers = append(timers, timer)
 						fmt.Println("Started short timer.")
 						go func() {
 							for t := range timer.Ticker.C {
 								for _, n := range toNumbers {
-									sendTwilioMessage(n, "You have an urgent support ticket that hasn't been responded to.  \n"+
+									resp, err := sendTwilioMessage(n, "You have an urgent support ticket that hasn't been responded to.  \n"+
 										"PLEASE RESPOND OR YOU WILL BE FINED! \n"+
 										"If you have already responded to the email ticket, please leave a comment on the Asana task to stop the texts: "+
 										"https://app.asana.com/0/"+supportProjectId+"/"+taskId)
-									fmt.Println("Sent urgent text at:", t)
+									if err != nil {
+										fmt.Println(err)
+									} else {
+										fmt.Printf("Sent urgent text to: %s at: %s", resp.To, t)
+									}
 								}
 							}
 						}()

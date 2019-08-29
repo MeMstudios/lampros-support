@@ -81,6 +81,10 @@ You should be able to extend this or fork it interact with most of Asana's API.
 Gmail API is a different pattern because we are using the Golang SDK for it.  
 You can do anything with the Gmail API as well, just check out the [documentation](https://godoc.org/google.golang.org/api/gmail/v1)
 
+Asana Notes
+---
+Recently, Asana changed their webhooks format without warning.  The documentation is still out of date.  So, I have the code I used to debug their request commented out in httpController.  The original format contained IDs as ints and GIDs as strings.  From what I can tell they are moving away from sending ints in JSON and going to all strings, which makes sense, becuase we had to convert ints to strings to call their APIs with the IDs we got.  But now this code has references to Ids and Gids which was my way of distinguishing between strings and ints but now they are mixed.
+
 Deployment
 ---
 It's currently running on a Linux AMI as a service.  
